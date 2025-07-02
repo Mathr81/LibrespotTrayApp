@@ -1,0 +1,8 @@
+{
+  "DeviceName": "Librespot",
+  "DeviceType": "computer",
+  "Bitrate": "320",
+  "Cache": "/cache",
+  "InitialVolume": 70,
+  "EnableVolumeNormalization": true
+}
