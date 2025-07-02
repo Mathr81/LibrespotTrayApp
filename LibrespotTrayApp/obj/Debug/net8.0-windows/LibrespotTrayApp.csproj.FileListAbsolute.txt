@@ -14,3 +14,6 @@ C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\obj\Debug\net
 C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\obj\Debug\net8.0-windows\ref\LibrespotTrayApp.dll
 C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\obj\Debug\net8.0-windows\LibrespotTrayApp.csproj.GenerateResource.cache
 C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\obj\Debug\net8.0-windows\LibrespotTrayApp.ConfigForm.resources
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Debug\net8.0-windows\app.ico
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Debug\net8.0-windows\librespot.exe
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\obj\Debug\net8.0-windows\LibrespotTrayApp.sourcelink.json

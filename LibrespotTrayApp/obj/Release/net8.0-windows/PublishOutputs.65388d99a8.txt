@@ -1,0 +1,7 @@
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\LibrespotTrayApp.exe
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\app.ico
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\librespot.exe
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\LibrespotTrayApp.dll
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\LibrespotTrayApp.deps.json
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\LibrespotTrayApp.runtimeconfig.json
+C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\LibrespotTrayApp.pdb

@@ -1,0 +1,8 @@
+{
+  "DeviceName": "Librespot",
+  "DeviceType": "speaker",
+  "Bitrate": "320",
+  "Cache": "C:/Users/mathe/AppData/Roaming/LibrespotTrayApp/cache",
+  "InitialVolume": 50,
+  "EnableVolumeNormalization": false
+}

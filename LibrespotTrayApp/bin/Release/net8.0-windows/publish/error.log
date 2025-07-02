@@ -1,0 +1,4 @@
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish\librespot.exe' with working directory 'C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\bin\Release\net8.0-windows\publish'. Le fichier spécifié est introuvable.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo startInfo)
+   at LibrespotTrayApp.LibrespotApplicationContext.StartLibrespot() in C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\LibrespotApplicationContext.cs:line 188
+   at LibrespotTrayApp.LibrespotApplicationContext..ctor() in C:\Users\mathe\Documents\Projets\LibrespotTrayApp\LibrespotTrayApp\LibrespotApplicationContext.cs:line 47

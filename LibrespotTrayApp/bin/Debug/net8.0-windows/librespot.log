@@ -1,0 +1,8 @@
+[2025-07-02T18:56:26Z INFO  librespot] librespot 0.6.0 VERGEN_IDEMPOTENT_OUTPUT (Built on 2025-06-30, Build ID: QXoxgogT, Profile: release)
+[2025-07-02T18:56:26Z INFO  librespot_playback::mixer::softmixer] Mixing with softvol and volume control: Log(60.0)
+[2025-07-02T18:56:26Z INFO  librespot_playback::convert] Converting with ditherer: tpdf
+[2025-07-02T18:56:26Z INFO  librespot_playback::audio_backend::rodio] Using Rodio sink with format S16 and cpal host: WASAPI
+[2025-07-02T18:56:26Z INFO  librespot_playback::audio_backend::rodio] Using audio device: Haut-parleurs (Realtek(R) Audio)
+[2025-07-02T18:56:26Z INFO  librespot_core::session] Connecting to AP "ap-gew1.spotify.com:4070"
+[2025-07-02T18:56:26Z INFO  librespot_core::session] Authenticated as '312qgtf7yvgm7z45hc77jajwexdm' !
+[2025-07-02T18:56:26Z INFO  librespot_core::session] Country: "FR"
