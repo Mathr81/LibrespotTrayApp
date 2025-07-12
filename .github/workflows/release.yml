@@ -1,0 +1,79 @@
+name: Create Release
+
+on: 
+  push:
+    tags:
+      - 'v*.*.*' # Déclenche le workflow sur les tags comme v1.0.0, v1.2.3, etc.
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest # Utilise un runner Windows car votre projet est Windows
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Nécessaire pour récupérer l'historique complet de Git pour le changelog
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' # Configure le SDK .NET 8.0
+
+    - name: Restore dependencies
+      run: dotnet restore LibrespotTrayApp/LibrespotTrayApp.csproj # Restaure les dépendances du projet
+
+    - name: Publish application
+      run: dotnet publish LibrespotTrayApp/LibrespotTrayApp.csproj -c Release -o ${{ github.workspace }}/publish_output # Publie l'application en mode Release
+
+    - name: Get previous tag
+      id: get_previous_tag
+      run: |
+        # Récupère le tag actuel
+        CURRENT_TAG=${{ github.ref_name }}
+        echo "Current tag: $CURRENT_TAG"
+
+        # Récupère le tag précédent dans l'historique Git
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 "$CURRENT_TAG^" 2>/dev/null || echo "")
+        echo "Previous tag: $PREVIOUS_TAG"
+
+        echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+    - name: Generate changelog
+      id: generate_changelog
+      run: |
+        CURRENT_TAG=${{ github.ref_name }}
+        PREVIOUS_TAG=${{ steps.get_previous_tag.outputs.previous_tag }}
+        CHANGELOG=""
+
+        if [ -z "$PREVIOUS_TAG" ]; then
+          # Si c'est la première release, prend les 20 derniers messages de commit
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" -n 20)
+          echo "No previous tag found. Generating changelog from all recent commits."
+        else
+          # Prend les messages de commit entre le tag précédent et le tag actuel
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG".."$CURRENT_TAG")
+          echo "Generating changelog from $PREVIOUS_TAG to $CURRENT_TAG."
+        fi
+
+        if [ -z "$CHANGELOG" ]; then
+          CHANGELOG="No significant changes."
+        fi
+
+        # Échappe les caractères spéciaux pour le multiline output
+        CHANGELOG="${CHANGELOG//'%'/'%25'}"
+        CHANGELOG="${CHANGELOG//$'
+'/'%0A'}"
+        CHANGELOG="${CHANGELOG//$''/'%0D'}"
+
+        echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2 # Utilise l'action pour créer une release GitHub
+      with:
+        tag_name: ${{ github.ref_name }} # Le nom du tag sera le nom de la release
+        name: Release ${{ github.ref_name }}
+        body: ${{ steps.generate_changelog.outputs.changelog }} # Le corps de la release sera le changelog
+        draft: false # La release ne sera pas un brouillon
+        prerelease: false # La release ne sera pas une pré-release
+        files: ${{ github.workspace }}/publish_output/* # Télécharge tous les fichiers publiés en tant qu'assets de la release
