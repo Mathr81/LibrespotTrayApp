@@ -13,7 +13,7 @@ SetupIconFile=..\app.ico
 UninstallDisplayIcon={app}\LibrespotTrayApp.exe
 
 [Files]
-Source: "..\LibrespotTrayApp\bin\Release\net8.0-windows\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyAppPath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\LibrespotTrayApp"; Filename: "{app}\LibrespotTrayApp.exe"

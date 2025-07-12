@@ -66,7 +66,9 @@ namespace LibrespotTrayApp
 
         private void LoadConfig()
         {
-            string configPath = Path.Combine(appPath, "config.json");
+            string configDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName);
+            Directory.CreateDirectory(configDirectory);
+            string configPath = Path.Combine(configDirectory, "config.json");
             if (File.Exists(configPath))
             {
                 try
@@ -91,7 +93,9 @@ namespace LibrespotTrayApp
 
         private void SaveConfig()
         {
-            string configPath = Path.Combine(appPath, "config.json");
+            string configDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName);
+            Directory.CreateDirectory(configDirectory);
+            string configPath = Path.Combine(configDirectory, "config.json");
             string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(configPath, json);
         }

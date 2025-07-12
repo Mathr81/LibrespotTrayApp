@@ -28,6 +28,9 @@ jobs:
     - name: Publish application
       run: dotnet publish LibrespotTrayApp/LibrespotTrayApp.csproj -c Release --self-contained true --runtime win-x64 -o ${{ github.workspace }}/publish_output # Publie l'application en mode Release et inclut le runtime
 
+    - name: List published files
+      run: ls -R ${{ github.workspace }}/publish_output
+
     - name: Get previous tag
       id: get_previous_tag
       shell: bash
@@ -76,8 +79,13 @@ jobs:
       run: choco install innosetup --no-progress
 
     - name: Compile Inno Setup installer
-      shell: bash
-      run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /O"${{ github.workspace }}" "${{ github.workspace }}/Installer/LibrespotTrayApp.iss"'
+      shell: pwsh
+      run: |
+        $ISCC_PATH = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+        $PUBLISH_OUTPUT_PATH = "${{ github.workspace }}\publish_output"
+        $ISS_FILE_PATH = "${{ github.workspace }}\Installer\LibrespotTrayApp.iss"
+        
+        & "$ISCC_PATH" "/DMyAppPath=$PUBLISH_OUTPUT_PATH" "/O${{ github.workspace }}" "$ISS_FILE_PATH"
 
     - name: Create Release
       uses: softprops/action-gh-release@v2 # Utilise l'action pour créer une release GitHub
