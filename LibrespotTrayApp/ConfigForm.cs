@@ -31,6 +31,7 @@ namespace LibrespotTrayApp
             deviceTypeComboBox.SelectedItem = config.DeviceType;
             initialVolumeTrackBar.Value = config.InitialVolume;
             enableVolumeNormalizationCheckBox.Checked = config.EnableVolumeNormalization;
+            enableAutoplayCheckBox.Checked = config.EnableAutoplay;
             processPriorityComboBox.SelectedItem = config.ProcessPriority;
             if (string.IsNullOrEmpty(config.AudioDevice))
             {
@@ -52,6 +53,7 @@ namespace LibrespotTrayApp
             config.DeviceType = deviceTypeComboBox.SelectedItem?.ToString() ?? "speaker";
             config.InitialVolume = initialVolumeTrackBar.Value;
             config.EnableVolumeNormalization = enableVolumeNormalizationCheckBox.Checked;
+            config.EnableAutoplay = enableAutoplayCheckBox.Checked;
             if (processPriorityComboBox.SelectedItem != null)
             {
                 config.ProcessPriority = (ProcessPriorityClass)processPriorityComboBox.SelectedItem;

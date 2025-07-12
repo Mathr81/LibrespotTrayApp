@@ -210,6 +210,11 @@ namespace LibrespotTrayApp
                 argumentsList.Add("--enable-volume-normalisation");
             }
 
+            if (config.EnableAutoplay)
+            {
+                argumentsList.Add("--autoplay on");
+            }
+
             if (!string.IsNullOrEmpty(config.AudioDevice))
             {
                 argumentsList.Add($"--device \"{config.AudioDevice}\"");

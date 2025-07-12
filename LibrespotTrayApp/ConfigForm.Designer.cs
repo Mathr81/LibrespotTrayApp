@@ -31,6 +31,7 @@ namespace LibrespotTrayApp
             this.processPriorityLabel = new System.Windows.Forms.Label();
             this.processPriorityComboBox = new System.Windows.Forms.ComboBox();
             this.enableVolumeNormalizationCheckBox = new System.Windows.Forms.CheckBox();
+            this.enableAutoplayCheckBox = new System.Windows.Forms.CheckBox();
             this.saveButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
             this.audioDeviceLabel = new System.Windows.Forms.Label();
@@ -66,12 +67,14 @@ namespace LibrespotTrayApp
             this.tableLayoutPanel1.Controls.Add(this.processPriorityLabel, 0, 6);
             this.tableLayoutPanel1.Controls.Add(this.processPriorityComboBox, 1, 6);
             this.tableLayoutPanel1.Controls.Add(this.enableVolumeNormalizationCheckBox, 0, 7);
-            this.tableLayoutPanel1.Controls.Add(this.buttonsPanel, 0, 8);
+            this.tableLayoutPanel1.Controls.Add(this.enableAutoplayCheckBox, 0, 8);
+            this.tableLayoutPanel1.Controls.Add(this.buttonsPanel, 0, 9);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.Padding = new System.Windows.Forms.Padding(10);
-            this.tableLayoutPanel1.RowCount = 9;
+            this.tableLayoutPanel1.RowCount = 10;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -268,6 +271,18 @@ namespace LibrespotTrayApp
             this.enableVolumeNormalizationCheckBox.Text = "Activer la normalisation du volume";
             this.enableVolumeNormalizationCheckBox.UseVisualStyleBackColor = true;
             // 
+            // enableAutoplayCheckBox
+            // 
+            this.enableAutoplayCheckBox.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.enableAutoplayCheckBox.AutoSize = true;
+            this.tableLayoutPanel1.SetColumnSpan(this.enableAutoplayCheckBox, 3);
+            this.enableAutoplayCheckBox.Location = new System.Drawing.Point(13, 261);
+            this.enableAutoplayCheckBox.Name = "enableAutoplayCheckBox";
+            this.enableAutoplayCheckBox.Size = new System.Drawing.Size(108, 17);
+            this.enableAutoplayCheckBox.TabIndex = 19;
+            this.enableAutoplayCheckBox.Text = "Activer l'autoplay";
+            this.enableAutoplayCheckBox.UseVisualStyleBackColor = true;
+            // 
             // buttonsPanel
             // 
             this.buttonsPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -275,7 +290,7 @@ namespace LibrespotTrayApp
             this.tableLayoutPanel1.SetColumnSpan(this.buttonsPanel, 3);
             this.buttonsPanel.Controls.Add(this.saveButton);
             this.buttonsPanel.Controls.Add(this.cancelButton);
-            this.buttonsPanel.Location = new System.Drawing.Point(201, 264);
+            this.buttonsPanel.Location = new System.Drawing.Point(201, 287);
             this.buttonsPanel.Name = "buttonsPanel";
             this.buttonsPanel.Size = new System.Drawing.Size(236, 29);
             this.buttonsPanel.TabIndex = 14;
@@ -336,6 +351,7 @@ namespace LibrespotTrayApp
         private System.Windows.Forms.Label initialVolumeLabel;
         private System.Windows.Forms.TrackBar initialVolumeTrackBar;
         private System.Windows.Forms.CheckBox enableVolumeNormalizationCheckBox;
+        private System.Windows.Forms.CheckBox enableAutoplayCheckBox;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.FlowLayoutPanel buttonsPanel;
         private System.Windows.Forms.Label processPriorityLabel;
