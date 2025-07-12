@@ -95,4 +95,4 @@ jobs:
         body: ${{ steps.generate_changelog.outputs.changelog }} # Le corps de la release sera le changelog
         draft: false # La release ne sera pas un brouillon
         prerelease: false # La release ne sera pas une pré-release
-        files: ${{ github.workspace }}/LibrespotTrayApp-Installer.exe # Télécharge l'installateur en tant qu'asset de la release
+        files: ${{ github.workspace }}/LibrespotTrayApp-Installer-${{ github.ref_name }}.exe # Télécharge l'installateur en tant qu'asset de la release
