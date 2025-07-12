@@ -1,11 +1,11 @@
 [Setup]
 AppName=LibrespotTrayApp
-AppVersion=1.0.0 ; Placeholder, will be replaced by GitHub Actions
+AppVersion={#emit AppVersion}
 AppPublisher=Mathr81
 DefaultDirName={autopf}\LibrespotTrayApp
 DisableProgramGroupPage=yes
 DisableWelcomePage=yes
-OutputBaseFilename=LibrespotTrayApp-Installer
+OutputBaseFilename=LibrespotTrayApp-Installer-{#AppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
