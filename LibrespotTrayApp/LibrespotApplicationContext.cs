@@ -26,7 +26,9 @@ namespace LibrespotTrayApp
         public LibrespotApplicationContext()
         {
             appPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-            librespotLogFilePath = Path.Combine(appPath, "librespot.log");
+            string logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName);
+            Directory.CreateDirectory(logDirectory);
+            librespotLogFilePath = Path.Combine(logDirectory, "librespot.log");
 
             try
             {
@@ -54,8 +56,10 @@ namespace LibrespotTrayApp
             }
             catch (Exception ex)
             {
-                File.WriteAllText(Path.Combine(appPath, "error.log"), ex.ToString());
-                MessageBox.Show($"Une erreur est survenue : {ex.Message}\nConsultez error.log pour plus de détails.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string errorLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName, "error.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(errorLogPath)!);
+                File.WriteAllText(errorLogPath, ex.ToString());
+                MessageBox.Show($"Une erreur est survenue : {ex.Message}\nConsultez {errorLogPath} pour plus de détails.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Application.Exit();
             }
         }

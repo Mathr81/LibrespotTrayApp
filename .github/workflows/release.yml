@@ -26,7 +26,7 @@ jobs:
       run: dotnet restore LibrespotTrayApp/LibrespotTrayApp.csproj # Restaure les dépendances du projet
 
     - name: Publish application
-      run: dotnet publish LibrespotTrayApp/LibrespotTrayApp.csproj -c Release -o ${{ github.workspace }}/publish_output # Publie l'application en mode Release
+      run: dotnet publish LibrespotTrayApp/LibrespotTrayApp.csproj -c Release --self-contained true --runtime win-x64 -o ${{ github.workspace }}/publish_output # Publie l'application en mode Release et inclut le runtime
 
     - name: Get previous tag
       id: get_previous_tag
@@ -72,8 +72,14 @@ jobs:
         echo "$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
 
-    - name: Create ZIP archive
-      run: Compress-Archive -Path ${{ github.workspace }}/publish_output/* -DestinationPath ${{ github.workspace }}/LibrespotTrayApp-${{ github.ref_name }}.zip
+    - name: Install Inno Setup
+      run: choco install innosetup --no-progress
+
+    - name: Copy app.ico to Installer directory
+      run: Copy-Item -Path "${{ github.workspace }}/app.ico" -Destination "${{ github.workspace }}/Installer/app.ico"
+
+    - name: Compile Inno Setup installer
+      run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /O"${{ github.workspace }}" "${{ github.workspace }}/Installer/LibrespotTrayApp.iss"'
 
     - name: Create Release
       uses: softprops/action-gh-release@v2 # Utilise l'action pour créer une release GitHub
@@ -83,4 +89,4 @@ jobs:
         body: ${{ steps.generate_changelog.outputs.changelog }} # Le corps de la release sera le changelog
         draft: false # La release ne sera pas un brouillon
         prerelease: false # La release ne sera pas une pré-release
-        files: ${{ github.workspace }}/LibrespotTrayApp-${{ github.ref_name }}.zip # Télécharge l'archive ZIP en tant qu'asset de la release
+        files: ${{ github.workspace }}/LibrespotTrayApp-Installer.exe # Télécharge l'installateur en tant qu'asset de la release
