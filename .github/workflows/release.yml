@@ -72,6 +72,9 @@ jobs:
         echo "$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
 
+    - name: Create ZIP archive
+      run: Compress-Archive -Path ${{ github.workspace }}/publish_output/* -DestinationPath ${{ github.workspace }}/LibrespotTrayApp-${{ github.ref_name }}.zip
+
     - name: Create Release
       uses: softprops/action-gh-release@v2 # Utilise l'action pour créer une release GitHub
       with:
@@ -80,4 +83,4 @@ jobs:
         body: ${{ steps.generate_changelog.outputs.changelog }} # Le corps de la release sera le changelog
         draft: false # La release ne sera pas un brouillon
         prerelease: false # La release ne sera pas une pré-release
-        files: ${{ github.workspace }}/publish_output/* # Télécharge tous les fichiers publiés en tant qu'assets de la release
+        files: ${{ github.workspace }}/LibrespotTrayApp-${{ github.ref_name }}.zip # Télécharge l'archive ZIP en tant qu'asset de la release
