@@ -75,10 +75,8 @@ jobs:
     - name: Install Inno Setup
       run: choco install innosetup --no-progress
 
-    - name: Copy app.ico to Installer directory
-      run: Copy-Item -Path "${{ github.workspace }}/app.ico" -Destination "${{ github.workspace }}/Installer/app.ico"
-
     - name: Compile Inno Setup installer
+      shell: bash
       run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /O"${{ github.workspace }}" "${{ github.workspace }}/Installer/LibrespotTrayApp.iss"'
 
     - name: Create Release
