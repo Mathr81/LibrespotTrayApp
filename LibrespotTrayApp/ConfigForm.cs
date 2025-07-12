@@ -32,7 +32,14 @@ namespace LibrespotTrayApp
             initialVolumeTrackBar.Value = config.InitialVolume;
             enableVolumeNormalizationCheckBox.Checked = config.EnableVolumeNormalization;
             processPriorityComboBox.SelectedItem = config.ProcessPriority;
-            audioDeviceComboBox.SelectedItem = config.AudioDevice;
+            if (string.IsNullOrEmpty(config.AudioDevice))
+            {
+                audioDeviceComboBox.SelectedIndex = 0;
+            }
+            else
+            {
+                audioDeviceComboBox.SelectedItem = config.AudioDevice;
+            }
         }
 
         
@@ -49,7 +56,14 @@ namespace LibrespotTrayApp
             {
                 config.ProcessPriority = (ProcessPriorityClass)processPriorityComboBox.SelectedItem;
             }
-            config.AudioDevice = audioDeviceComboBox.SelectedItem?.ToString();
+            if (audioDeviceComboBox.SelectedIndex == 0)
+            {
+                config.AudioDevice = null;
+            }
+            else
+            {
+                config.AudioDevice = audioDeviceComboBox.SelectedItem?.ToString();
+            }
         }
 
         private void InitialVolumeTrackBar_Scroll(object sender, EventArgs e)

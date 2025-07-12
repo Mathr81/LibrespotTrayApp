@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -111,10 +112,20 @@ namespace LibrespotTrayApp
                 string output = await process.StandardOutput.ReadToEndAsync();
                 await process.WaitForExitAsync();
 
-                var matches = Regex.Matches(output, @"^  (.+)", RegexOptions.Multiline);
-                foreach (Match match in matches)
+                var defaultDeviceMatch = Regex.Match(output, @"Default Audio Device:\n  (.+)");
+                if (defaultDeviceMatch.Success)
                 {
-                    devices.Add(match.Groups[1].Value.Trim());
+                    devices.Add($"Défaut ({defaultDeviceMatch.Groups[1].Value.Trim()})");
+                }
+
+                var otherDevicesMatch = Regex.Match(output, @"Other Available Audio Devices:((\n  .+)+)");
+                if (otherDevicesMatch.Success)
+                {
+                    var otherDevices = Regex.Matches(otherDevicesMatch.Groups[1].Value, @"^  (.+)", RegexOptions.Multiline);
+                    foreach (Match match in otherDevices)
+                    {
+                        devices.Add(match.Groups[1].Value.Trim());
+                    }
                 }
             }
             catch (Exception ex)
