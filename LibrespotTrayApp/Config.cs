@@ -13,5 +13,6 @@ namespace LibrespotTrayApp
         public int InitialVolume { get; set; } = 50;
         public bool EnableVolumeNormalization { get; set; } = false;
         public ProcessPriorityClass ProcessPriority { get; set; } = ProcessPriorityClass.Normal;
+        public string? AudioDevice { get; set; }
     }
 }

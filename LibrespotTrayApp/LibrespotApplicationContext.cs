@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -14,6 +17,7 @@ namespace LibrespotTrayApp
         private NotifyIcon? trayIcon;
         private Process? librespotProcess;
         private Config config = null!;
+        private List<string> audioDevices = new List<string>();
         private readonly string appPath;
         private string librespotLogFilePath;
         private StreamWriter? librespotLogWriter;
@@ -44,6 +48,7 @@ namespace LibrespotTrayApp
                 trayIcon.ContextMenuStrip.Items.Add(new ToolStripSeparator());
                 trayIcon.ContextMenuStrip.Items.Add(new ToolStripMenuItem("Quitter", null, Exit));
 
+                Task.Run(UpdateAudioDevices);
                 StartLibrespot();
             }
             catch (Exception ex)
@@ -86,9 +91,43 @@ namespace LibrespotTrayApp
             File.WriteAllText(configPath, json);
         }
 
+        private async Task UpdateAudioDevices()
+        {
+            var devices = new List<string>();
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = Path.Combine(appPath, "librespot.exe"),
+                        Arguments = "--device ?",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                    }
+                };
+                process.Start();
+                string output = await process.StandardOutput.ReadToEndAsync();
+                await process.WaitForExitAsync();
+
+                var matches = Regex.Matches(output, @"^  (.+)", RegexOptions.Multiline);
+                foreach (Match match in matches)
+                {
+                    devices.Add(match.Groups[1].Value.Trim());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error getting audio devices: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            audioDevices = devices;
+        }
+
+
         void ShowConfig(object? sender, EventArgs e)
         {
-            using (var configForm = new ConfigForm(config))
+            using (var configForm = new ConfigForm(config, audioDevices))
             {
                 if (configForm.ShowDialog() == DialogResult.OK)
                 {
@@ -138,6 +177,7 @@ namespace LibrespotTrayApp
             }
             librespotLogWriter?.Close();
             librespotLogWriter?.Dispose();
+            Task.Run(UpdateAudioDevices);
             StartLibrespot();
         }
 
@@ -157,6 +197,11 @@ namespace LibrespotTrayApp
             if (config.EnableVolumeNormalization)
             {
                 argumentsList.Add("--enable-volume-normalisation");
+            }
+
+            if (!string.IsNullOrEmpty(config.AudioDevice))
+            {
+                argumentsList.Add($"--device \"{config.AudioDevice}\"");
             }
 
             

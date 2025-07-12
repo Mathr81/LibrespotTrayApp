@@ -33,6 +33,8 @@ namespace LibrespotTrayApp
             this.enableVolumeNormalizationCheckBox = new System.Windows.Forms.CheckBox();
             this.saveButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
+            this.audioDeviceLabel = new System.Windows.Forms.Label();
+            this.audioDeviceComboBox = new System.Windows.Forms.ComboBox();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.buttonsPanel = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this.initialVolumeTrackBar)).BeginInit();
@@ -57,17 +59,20 @@ namespace LibrespotTrayApp
             this.tableLayoutPanel1.Controls.Add(this.browseButton, 2, 2);
             this.tableLayoutPanel1.Controls.Add(this.deviceTypeLabel, 0, 3);
             this.tableLayoutPanel1.Controls.Add(this.deviceTypeComboBox, 1, 3);
-            this.tableLayoutPanel1.Controls.Add(this.initialVolumeLabel, 0, 4);
-            this.tableLayoutPanel1.Controls.Add(this.initialVolumeTrackBar, 1, 4);
-            this.tableLayoutPanel1.Controls.Add(this.processPriorityLabel, 0, 5);
-            this.tableLayoutPanel1.Controls.Add(this.processPriorityComboBox, 1, 5);
-            this.tableLayoutPanel1.Controls.Add(this.enableVolumeNormalizationCheckBox, 0, 6);
-            this.tableLayoutPanel1.Controls.Add(this.buttonsPanel, 0, 7);
+            this.tableLayoutPanel1.Controls.Add(this.audioDeviceLabel, 0, 4);
+            this.tableLayoutPanel1.Controls.Add(this.audioDeviceComboBox, 1, 4);
+            this.tableLayoutPanel1.Controls.Add(this.initialVolumeLabel, 0, 5);
+            this.tableLayoutPanel1.Controls.Add(this.initialVolumeTrackBar, 1, 5);
+            this.tableLayoutPanel1.Controls.Add(this.processPriorityLabel, 0, 6);
+            this.tableLayoutPanel1.Controls.Add(this.processPriorityComboBox, 1, 6);
+            this.tableLayoutPanel1.Controls.Add(this.enableVolumeNormalizationCheckBox, 0, 7);
+            this.tableLayoutPanel1.Controls.Add(this.buttonsPanel, 0, 8);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.Padding = new System.Windows.Forms.Padding(10);
-            this.tableLayoutPanel1.RowCount = 8;
+            this.tableLayoutPanel1.RowCount = 9;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -197,6 +202,27 @@ namespace LibrespotTrayApp
             this.initialVolumeLabel.TabIndex = 9;
             this.initialVolumeLabel.Text = "Volume Initial";
             // 
+            // audioDeviceLabel
+            // 
+            this.audioDeviceLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.audioDeviceLabel.AutoSize = true;
+            this.audioDeviceLabel.Location = new System.Drawing.Point(13, 132);
+            this.audioDeviceLabel.Name = "audioDeviceLabel";
+            this.audioDeviceLabel.Size = new System.Drawing.Size(98, 13);
+            this.audioDeviceLabel.TabIndex = 17;
+            this.audioDeviceLabel.Text = "Périphérique audio";
+            // 
+            // audioDeviceComboBox
+            // 
+            this.tableLayoutPanel1.SetColumnSpan(this.audioDeviceComboBox, 2);
+            this.audioDeviceComboBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.audioDeviceComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.audioDeviceComboBox.FormattingEnabled = true;
+            this.audioDeviceComboBox.Location = new System.Drawing.Point(120, 128);
+            this.audioDeviceComboBox.Name = "audioDeviceComboBox";
+            this.audioDeviceComboBox.Size = new System.Drawing.Size(317, 21);
+            this.audioDeviceComboBox.TabIndex = 18;
+            // 
             // initialVolumeTrackBar
             // 
             this.tableLayoutPanel1.SetColumnSpan(this.initialVolumeTrackBar, 2);
@@ -213,7 +239,7 @@ namespace LibrespotTrayApp
             // 
             this.processPriorityLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.processPriorityLabel.AutoSize = true;
-            this.processPriorityLabel.Location = new System.Drawing.Point(13, 183);
+            this.processPriorityLabel.Location = new System.Drawing.Point(13, 211);
             this.processPriorityLabel.Name = "processPriorityLabel";
             this.processPriorityLabel.Size = new System.Drawing.Size(99, 13);
             this.processPriorityLabel.TabIndex = 11;
@@ -225,7 +251,7 @@ namespace LibrespotTrayApp
             this.processPriorityComboBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.processPriorityComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.processPriorityComboBox.FormattingEnabled = true;
-            this.processPriorityComboBox.Location = new System.Drawing.Point(120, 179);
+            this.processPriorityComboBox.Location = new System.Drawing.Point(120, 207);
             this.processPriorityComboBox.Name = "processPriorityComboBox";
             this.processPriorityComboBox.Size = new System.Drawing.Size(317, 21);
             this.processPriorityComboBox.TabIndex = 12;
@@ -235,7 +261,7 @@ namespace LibrespotTrayApp
             this.enableVolumeNormalizationCheckBox.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.enableVolumeNormalizationCheckBox.AutoSize = true;
             this.tableLayoutPanel1.SetColumnSpan(this.enableVolumeNormalizationCheckBox, 3);
-            this.enableVolumeNormalizationCheckBox.Location = new System.Drawing.Point(13, 210);
+            this.enableVolumeNormalizationCheckBox.Location = new System.Drawing.Point(13, 238);
             this.enableVolumeNormalizationCheckBox.Name = "enableVolumeNormalizationCheckBox";
             this.enableVolumeNormalizationCheckBox.Size = new System.Drawing.Size(182, 17);
             this.enableVolumeNormalizationCheckBox.TabIndex = 13;
@@ -249,7 +275,7 @@ namespace LibrespotTrayApp
             this.tableLayoutPanel1.SetColumnSpan(this.buttonsPanel, 3);
             this.buttonsPanel.Controls.Add(this.saveButton);
             this.buttonsPanel.Controls.Add(this.cancelButton);
-            this.buttonsPanel.Location = new System.Drawing.Point(201, 236);
+            this.buttonsPanel.Location = new System.Drawing.Point(201, 264);
             this.buttonsPanel.Name = "buttonsPanel";
             this.buttonsPanel.Size = new System.Drawing.Size(236, 29);
             this.buttonsPanel.TabIndex = 14;
@@ -314,6 +340,8 @@ namespace LibrespotTrayApp
         private System.Windows.Forms.FlowLayoutPanel buttonsPanel;
         private System.Windows.Forms.Label processPriorityLabel;
         private System.Windows.Forms.ComboBox processPriorityComboBox;
+        private System.Windows.Forms.Label audioDeviceLabel;
+        private System.Windows.Forms.ComboBox audioDeviceComboBox;
     }
 }
         
