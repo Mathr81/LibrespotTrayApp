@@ -8,6 +8,8 @@ on:
 jobs:
   build-and-release:
     runs-on: windows-latest # Utilise un runner Windows car votre projet est Windows
+    permissions:
+      contents: write # Permet au workflow de créer et de modifier des releases
 
     steps:
     - name: Checkout code
