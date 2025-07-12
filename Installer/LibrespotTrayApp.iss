@@ -1,6 +1,6 @@
 [Setup]
 AppName=LibrespotTrayApp
-AppVersion={#emit AppVersion}
+AppVersion={#AppVersion}
 AppPublisher=Mathr81
 DefaultDirName={autopf}\LibrespotTrayApp
 DisableProgramGroupPage=yes
