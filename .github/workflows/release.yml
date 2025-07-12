@@ -85,7 +85,7 @@ jobs:
         $PUBLISH_OUTPUT_PATH = "${{ github.workspace }}\publish_output"
         $ISS_FILE_PATH = "${{ github.workspace }}\Installer\LibrespotTrayApp.iss"
         
-        & "$ISCC_PATH" "/DMyAppPath=$PUBLISH_OUTPUT_PATH" "/O${{ github.workspace }}" "$ISS_FILE_PATH"
+        & "$ISCC_PATH" "/DMyAppPath=$PUBLISH_OUTPUT_PATH" "/DAppVersion=${{ github.ref_name }}" "/O${{ github.workspace }}" "$ISS_FILE_PATH"
 
     - name: Create Release
       uses: softprops/action-gh-release@v2 # Utilise l'action pour créer une release GitHub
