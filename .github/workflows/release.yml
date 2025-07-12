@@ -1,6 +1,6 @@
 name: Create Release
 
-on: 
+on:
   push:
     tags:
       - 'v*.*.*' # Déclenche le workflow sur les tags comme v1.0.0, v1.2.3, etc.
@@ -44,29 +44,29 @@ jobs:
       run: |
         CURRENT_TAG=${{ github.ref_name }}
         PREVIOUS_TAG=${{ steps.get_previous_tag.outputs.previous_tag }}
-        CHANGELOG=""
+        CHANGELOG_RAW=""
 
         if [ -z "$PREVIOUS_TAG" ]; then
           # Si c'est la première release, prend les 20 derniers messages de commit
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)" -n 20)
+          CHANGELOG_RAW=$(git log --pretty=format:"- %s (%h)" -n 20)
           echo "No previous tag found. Generating changelog from all recent commits."
         else
           # Prend les messages de commit entre le tag précédent et le tag actuel
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG".."$CURRENT_TAG")
+          CHANGELOG_RAW=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG".."$CURRENT_TAG")
           echo "Generating changelog from $PREVIOUS_TAG to $CURRENT_TAG."
         fi
 
-        if [ -z "$CHANGELOG" ]; then
-          CHANGELOG="No significant changes."
+        if [ -z "$CHANGELOG_RAW" ]; then
+          CHANGELOG_RAW="No significant changes."
         fi
 
-        # Échappe les caractères spéciaux pour le multiline output
-        CHANGELOG="${CHANGELOG//'%'/'%25'}"
-        CHANGELOG="${CHANGELOG//$'
-'/'%0A'}"
-        CHANGELOG="${CHANGELOG//$''/'%0D'}"
+        # Échappe les caractères '%' pour la sortie GitHub Actions
+        CHANGELOG_ESCAPED=$(echo "$CHANGELOG_RAW" | sed 's/%/%25/g')
 
-        echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+        # Définit la sortie multiligne en utilisant un délimiteur
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Create Release
       uses: softprops/action-gh-release@v2 # Utilise l'action pour créer une release GitHub
