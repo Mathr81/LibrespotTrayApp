@@ -186,6 +186,7 @@ namespace LibrespotTrayApp
             librespotLogWriter = new StreamWriter(librespotLogFilePath, append: true);
 
             librespotProcess.Start();
+            librespotProcess.PriorityClass = config.ProcessPriority;
             librespotProcess.BeginOutputReadLine();
             librespotProcess.BeginErrorReadLine();
 

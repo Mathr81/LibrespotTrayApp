@@ -4,5 +4,6 @@
   "Bitrate": "320",
   "Cache": "/cache",
   "InitialVolume": 70,
-  "EnableVolumeNormalization": true
+  "EnableVolumeNormalization": true,
+  "ProcessPriority": 32
 }

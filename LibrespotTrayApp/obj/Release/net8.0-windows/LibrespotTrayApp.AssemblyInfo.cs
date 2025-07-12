@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LibrespotTrayApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5a30b4070498eb5c9131109fb34df9d649c6d1e3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ff4946cee7787ccdd9f1d28f3046d7565cd9354")]
 [assembly: System.Reflection.AssemblyProductAttribute("LibrespotTrayApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LibrespotTrayApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -28,6 +28,8 @@ namespace LibrespotTrayApp
             this.deviceTypeComboBox = new System.Windows.Forms.ComboBox();
             this.initialVolumeLabel = new System.Windows.Forms.Label();
             this.initialVolumeTrackBar = new System.Windows.Forms.TrackBar();
+            this.processPriorityLabel = new System.Windows.Forms.Label();
+            this.processPriorityComboBox = new System.Windows.Forms.ComboBox();
             this.enableVolumeNormalizationCheckBox = new System.Windows.Forms.CheckBox();
             this.saveButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
@@ -57,13 +59,16 @@ namespace LibrespotTrayApp
             this.tableLayoutPanel1.Controls.Add(this.deviceTypeComboBox, 1, 3);
             this.tableLayoutPanel1.Controls.Add(this.initialVolumeLabel, 0, 4);
             this.tableLayoutPanel1.Controls.Add(this.initialVolumeTrackBar, 1, 4);
-            this.tableLayoutPanel1.Controls.Add(this.enableVolumeNormalizationCheckBox, 0, 5);
-            this.tableLayoutPanel1.Controls.Add(this.buttonsPanel, 0, 6);
+            this.tableLayoutPanel1.Controls.Add(this.processPriorityLabel, 0, 5);
+            this.tableLayoutPanel1.Controls.Add(this.processPriorityComboBox, 1, 5);
+            this.tableLayoutPanel1.Controls.Add(this.enableVolumeNormalizationCheckBox, 0, 6);
+            this.tableLayoutPanel1.Controls.Add(this.buttonsPanel, 0, 7);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.Padding = new System.Windows.Forms.Padding(10);
-            this.tableLayoutPanel1.RowCount = 7;
+            this.tableLayoutPanel1.RowCount = 8;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -204,15 +209,36 @@ namespace LibrespotTrayApp
             this.initialVolumeTrackBar.TickFrequency = 10;
             this.initialVolumeTrackBar.Scroll += new System.EventHandler(this.InitialVolumeTrackBar_Scroll);
             // 
+            // processPriorityLabel
+            // 
+            this.processPriorityLabel.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.processPriorityLabel.AutoSize = true;
+            this.processPriorityLabel.Location = new System.Drawing.Point(13, 183);
+            this.processPriorityLabel.Name = "processPriorityLabel";
+            this.processPriorityLabel.Size = new System.Drawing.Size(99, 13);
+            this.processPriorityLabel.TabIndex = 11;
+            this.processPriorityLabel.Text = "Priorité du processus";
+            // 
+            // processPriorityComboBox
+            // 
+            this.tableLayoutPanel1.SetColumnSpan(this.processPriorityComboBox, 2);
+            this.processPriorityComboBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.processPriorityComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.processPriorityComboBox.FormattingEnabled = true;
+            this.processPriorityComboBox.Location = new System.Drawing.Point(120, 179);
+            this.processPriorityComboBox.Name = "processPriorityComboBox";
+            this.processPriorityComboBox.Size = new System.Drawing.Size(317, 21);
+            this.processPriorityComboBox.TabIndex = 12;
+            // 
             // enableVolumeNormalizationCheckBox
             // 
             this.enableVolumeNormalizationCheckBox.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.enableVolumeNormalizationCheckBox.AutoSize = true;
             this.tableLayoutPanel1.SetColumnSpan(this.enableVolumeNormalizationCheckBox, 3);
-            this.enableVolumeNormalizationCheckBox.Location = new System.Drawing.Point(13, 183);
+            this.enableVolumeNormalizationCheckBox.Location = new System.Drawing.Point(13, 210);
             this.enableVolumeNormalizationCheckBox.Name = "enableVolumeNormalizationCheckBox";
             this.enableVolumeNormalizationCheckBox.Size = new System.Drawing.Size(182, 17);
-            this.enableVolumeNormalizationCheckBox.TabIndex = 11;
+            this.enableVolumeNormalizationCheckBox.TabIndex = 13;
             this.enableVolumeNormalizationCheckBox.Text = "Activer la normalisation du volume";
             this.enableVolumeNormalizationCheckBox.UseVisualStyleBackColor = true;
             // 
@@ -223,10 +249,10 @@ namespace LibrespotTrayApp
             this.tableLayoutPanel1.SetColumnSpan(this.buttonsPanel, 3);
             this.buttonsPanel.Controls.Add(this.saveButton);
             this.buttonsPanel.Controls.Add(this.cancelButton);
-            this.buttonsPanel.Location = new System.Drawing.Point(201, 209);
+            this.buttonsPanel.Location = new System.Drawing.Point(201, 236);
             this.buttonsPanel.Name = "buttonsPanel";
             this.buttonsPanel.Size = new System.Drawing.Size(236, 29);
-            this.buttonsPanel.TabIndex = 12;
+            this.buttonsPanel.TabIndex = 14;
             // 
             // saveButton
             // 
@@ -234,7 +260,7 @@ namespace LibrespotTrayApp
             this.saveButton.Location = new System.Drawing.Point(3, 3);
             this.saveButton.Name = "saveButton";
             this.saveButton.Size = new System.Drawing.Size(112, 23);
-            this.saveButton.TabIndex = 12;
+            this.saveButton.TabIndex = 15;
             this.saveButton.Text = "Enregistrer";
             this.saveButton.UseVisualStyleBackColor = true;
             this.saveButton.Click += new System.EventHandler(this.SaveButton_Click);
@@ -245,7 +271,7 @@ namespace LibrespotTrayApp
             this.cancelButton.Location = new System.Drawing.Point(121, 3);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(112, 23);
-            this.cancelButton.TabIndex = 13;
+            this.cancelButton.TabIndex = 16;
             this.cancelButton.Text = "Annuler";
             this.cancelButton.UseVisualStyleBackColor = true;
             this.cancelButton.Click += new System.EventHandler(this.CancelButton_Click);
@@ -286,6 +312,8 @@ namespace LibrespotTrayApp
         private System.Windows.Forms.CheckBox enableVolumeNormalizationCheckBox;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.FlowLayoutPanel buttonsPanel;
+        private System.Windows.Forms.Label processPriorityLabel;
+        private System.Windows.Forms.ComboBox processPriorityComboBox;
     }
 }
         

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace LibrespotTrayApp
@@ -11,6 +12,10 @@ namespace LibrespotTrayApp
         {
             InitializeComponent();
             this.config = config;
+            
+            // Populate ProcessPriority ComboBox
+            processPriorityComboBox.DataSource = Enum.GetValues(typeof(ProcessPriorityClass));
+
             LoadConfigIntoForm();
         }
 
@@ -22,6 +27,7 @@ namespace LibrespotTrayApp
             deviceTypeComboBox.SelectedItem = config.DeviceType;
             initialVolumeTrackBar.Value = config.InitialVolume;
             enableVolumeNormalizationCheckBox.Checked = config.EnableVolumeNormalization;
+            processPriorityComboBox.SelectedItem = config.ProcessPriority;
         }
 
         
@@ -34,6 +40,10 @@ namespace LibrespotTrayApp
             config.DeviceType = deviceTypeComboBox.SelectedItem?.ToString() ?? "speaker";
             config.InitialVolume = initialVolumeTrackBar.Value;
             config.EnableVolumeNormalization = enableVolumeNormalizationCheckBox.Checked;
+            if (processPriorityComboBox.SelectedItem != null)
+            {
+                config.ProcessPriority = (ProcessPriorityClass)processPriorityComboBox.SelectedItem;
+            }
         }
 
         private void InitialVolumeTrackBar_Scroll(object sender, EventArgs e)
