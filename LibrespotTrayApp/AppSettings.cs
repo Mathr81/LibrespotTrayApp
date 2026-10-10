@@ -53,6 +53,9 @@ public sealed class AppSettings
 
     public int InitialVolume { get; set; } = 50;
     public bool EnableAutoplay { get; set; }
+
+    /// <summary>Media keys (headset, keyboard) and "now playing" in the Windows media controls.</summary>
+    public bool EnableMediaControls { get; set; } = true;
     public ProcessPriorityClass ProcessPriority { get; set; } = ProcessPriorityClass.AboveNormal;
 
     [JsonPropertyName("Cache")]
@@ -80,6 +83,7 @@ public sealed class AppSettings
         || RememberVolume != other.RememberVolume
         || (!other.RememberVolume && InitialVolume != other.InitialVolume)
         || EnableAutoplay != other.EnableAutoplay
+        || EnableMediaControls != other.EnableMediaControls
         || ProcessPriority != other.ProcessPriority
         || !string.Equals(AudioCacheDir, other.AudioCacheDir, StringComparison.OrdinalIgnoreCase)
         || AudioCacheSizeGb != other.AudioCacheSizeGb

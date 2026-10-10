@@ -27,6 +27,7 @@ internal sealed class SettingsForm : Form
     private readonly TrackBar initialVolume = new() { Minimum = 0, Maximum = 100, TickFrequency = 10, SmallChange = 1, LargeChange = 10, Width = 220, AutoSize = false, Height = 32 };
     private readonly Label initialVolumeValue = new() { AutoSize = true, Anchor = AnchorStyles.Left };
     private readonly CheckBox autoplay = NewCheckBox("Lecture automatique de titres similaires (autoplay)");
+    private readonly CheckBox mediaControls = NewCheckBox("Touches multimédias (casque, clavier) et titre en cours dans Windows");
     private readonly ComboBox priority = NewComboBox();
     private readonly NumericUpDown cacheSize = new() { Minimum = 0, Maximum = 100, Width = 70 };
     private readonly TextBox cacheDir = new() { Width = 240 };
@@ -83,6 +84,7 @@ internal sealed class SettingsForm : Form
         Row(grid, null, rememberVolume);
         Row(grid, "Volume initial :", Flow(initialVolume, initialVolumeValue));
         Row(grid, null, autoplay);
+        Row(grid, null, mediaControls);
 
         Section(grid, "Performances");
         Row(grid, "Priorité :", priority);
@@ -118,6 +120,7 @@ internal sealed class SettingsForm : Form
         toolTip.SetToolTip(audioDevice, "Avec le périphérique par défaut, la lecture suit le périphérique choisi dans Windows.");
         toolTip.SetToolTip(priority, "« Supérieure à la normale » évite les coupures quand un jeu occupe le processeur, sans le ralentir : librespot consomme très peu.");
         toolTip.SetToolTip(cacheSize, "Les titres déjà écoutés sont relus depuis le disque au lieu d'être retéléchargés.");
+        toolTip.SetToolTip(mediaControls, "Lecture/pause, suivant et précédent depuis le casque ou le clavier, et titre/pochette dans l'affichage du volume de Windows.");
         toolTip.SetToolTip(discovery, "Désactivé : seul votre compte voit l'appareil (un peu moins de trafic réseau).");
         toolTip.SetToolTip(restartAfterResume, "Rétablit la connexion à Spotify après la mise en veille du PC.");
 
@@ -197,6 +200,7 @@ internal sealed class SettingsForm : Form
         rememberVolume.Checked = Settings.RememberVolume;
         initialVolume.Value = Settings.InitialVolume;
         autoplay.Checked = Settings.EnableAutoplay;
+        mediaControls.Checked = Settings.EnableMediaControls;
         cacheSize.Value = Settings.AudioCacheSizeGb;
         cacheDir.Text = Settings.AudioCacheDir;
         startWithWindows.Checked = startsWithWindows;
@@ -331,6 +335,7 @@ internal sealed class SettingsForm : Form
         Settings.RememberVolume = rememberVolume.Checked;
         Settings.InitialVolume = initialVolume.Value;
         Settings.EnableAutoplay = autoplay.Checked;
+        Settings.EnableMediaControls = mediaControls.Checked;
         Settings.ProcessPriority = ((Choice<ProcessPriorityClass>)priority.SelectedItem!).Value;
         Settings.AudioCacheSizeGb = (int)cacheSize.Value;
         if (dir.Length > 0)

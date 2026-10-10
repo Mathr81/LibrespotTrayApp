@@ -238,6 +238,11 @@ internal sealed class LibrespotService : IDisposable
             args.Add("on");
         }
 
+        if (settings.EnableMediaControls)
+        {
+            args.Add("--media-controls");
+        }
+
         if (!settings.EnableDiscovery)
         {
             args.Add("--disable-discovery");

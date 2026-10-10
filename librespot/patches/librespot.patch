@@ -1,5 +1,5 @@
 diff --git a/Cargo.lock b/Cargo.lock
-index c135de1..b38bb2c 100644
+index c135de1..e1d1cf7 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -185,6 +185,20 @@ version = "0.1.13"
@@ -68,7 +68,15 @@ index c135de1..b38bb2c 100644
  [[package]]
  name = "libloading"
  version = "0.7.4"
-@@ -2051,6 +2083,15 @@ version = "0.1.2"
+@@ -1817,6 +1849,7 @@ dependencies = [
+  "thiserror 2.0.17",
+  "tokio",
+  "url",
++ "windows 0.61.3",
+ ]
+ 
+ [[package]]
+@@ -2051,6 +2084,15 @@ version = "0.1.2"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
  
@@ -85,10 +93,29 @@ index c135de1..b38bb2c 100644
  name = "mach2"
  version = "0.4.3"
 diff --git a/Cargo.toml b/Cargo.toml
-index c892625..0b961b0 100644
+index c892625..5681888 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -209,3 +209,6 @@ assets = [
+@@ -182,6 +182,18 @@ tokio = { version = "1", features = [
+ ] }
+ url = "2.2"
+ 
++[target.'cfg(windows)'.dependencies]
++windows = { version = "0.61", default-features = false, features = [
++    "Foundation",
++    "Media",
++    "Storage_Streams",
++    "Win32_Foundation",
++    "Win32_Graphics_Gdi",
++    "Win32_System_LibraryLoader",
++    "Win32_System_WinRT",
++    "Win32_UI_WindowsAndMessaging",
++] }
++
+ [package.metadata.deb]
+ maintainer = "Librespot Organization <noreply@github.com>"
+ copyright = "2015, Paul Liétar"
+@@ -209,3 +221,6 @@ assets = [
      ["contrib/librespot.service", "lib/systemd/system/", "644"],
      ["contrib/librespot.user.service", "lib/systemd/user/", "644"],
  ]
@@ -366,3 +393,411 @@ index b6cd346..8748ce2 100644
              // sleep and wait for rodio to drain a bit
              thread::sleep(Duration::from_millis(10));
          }
+diff --git a/src/main.rs b/src/main.rs
+index fb85803..883ead3 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -38,6 +38,7 @@ use thiserror::Error;
+ use tokio::sync::Semaphore;
+ use url::Url;
+ 
++mod media_controls;
+ mod player_event_handler;
+ use player_event_handler::{EventHandler, run_program_on_sink_events};
+ 
+@@ -221,6 +222,7 @@ struct Setup {
+     emit_sink_events: bool,
+     zeroconf_ip: Vec<std::net::IpAddr>,
+     zeroconf_backend: Option<DnsSdServiceBuilder>,
++    media_controls: bool,
+ }
+ 
+ async fn get_setup() -> Setup {
+@@ -284,6 +286,7 @@ async fn get_setup() -> Setup {
+     const ZEROCONF_INTERFACE: &str = "zeroconf-interface";
+     const ZEROCONF_BACKEND: &str = "zeroconf-backend";
+     const LOCAL_FILE_DIR: &str = "local-file-dir";
++    const MEDIA_CONTROLS: &str = "media-controls";
+ 
+     // Mostly arbitrary.
+     const AP_PORT_SHORT: &str = "a";
+@@ -437,6 +440,11 @@ async fn get_setup() -> Setup {
+         ENABLE_OAUTH,
+         "Perform interactive OAuth sign in.",
+     )
++    .optflag(
++        "",
++        MEDIA_CONTROLS,
++        "Handle the media keys and show what is playing in the Windows media controls (Windows only).",
++    )
+     .optopt(
+         NAME_SHORT,
+         NAME,
+@@ -1838,6 +1846,7 @@ async fn get_setup() -> Setup {
+ 
+     let player_event_program = opt_str(ONEVENT);
+     let emit_sink_events = opt_present(EMIT_SINK_EVENTS);
++    let media_controls = opt_present(MEDIA_CONTROLS);
+ 
+     Setup {
+         format,
+@@ -1857,6 +1866,7 @@ async fn get_setup() -> Setup {
+         emit_sink_events,
+         zeroconf_ip,
+         zeroconf_backend,
++        media_controls,
+     }
+ }
+ 
+@@ -2005,8 +2015,36 @@ async fn main() {
+         }
+     }
+ 
++    // Media keys arrive here; the sender is kept alive so that the channel never closes.
++    let (media_command_sender, mut media_commands) =
++        tokio::sync::mpsc::unbounded_channel::<media_controls::MediaCommand>();
++    #[cfg(windows)]
++    if setup.media_controls {
++        match media_controls::MediaControls::start(media_command_sender.clone()) {
++            Ok(controls) => {
++                let mut events = player.get_player_event_channel();
++                tokio::spawn(async move {
++                    while let Some(event) = events.recv().await {
++                        controls.handle_event(&event);
++                    }
++                });
++            }
++            Err(e) => warn!("Cannot enable the Windows media controls: {e}"),
++        }
++    }
++    #[cfg(not(windows))]
++    if setup.media_controls {
++        warn!("Media controls are only supported on Windows");
++    }
++
+     loop {
+         tokio::select! {
++            Some(command) = media_commands.recv() => {
++                match spirc.as_ref() {
++                    Some(spirc) => command.run(spirc),
++                    None => debug!("Ignoring media control {command:?}: not connected"),
++                }
++            },
+             credentials = async {
+                 match discovery.as_mut() {
+                     Some(d) => d.next().await,
+@@ -2099,6 +2137,7 @@ async fn main() {
+         }
+     }
+ 
++    drop(media_command_sender);
+     info!("Gracefully shutting down");
+ 
+     let mut shutdown_tasks = tokio::task::JoinSet::new();
+diff --git a/src/media_controls.rs b/src/media_controls.rs
+new file mode 100644
+index 0000000..dcb92fb
+--- /dev/null
++++ b/src/media_controls.rs
+@@ -0,0 +1,301 @@
++//! Windows media controls (System Media Transport Controls): headset and keyboard media keys,
++//! and the title, artist and cover shown by Windows (volume overlay, media flyout...).
++
++use librespot::connect::Spirc;
++use log::{info, warn};
++
++/// A media key or a request from the Windows media flyout.
++#[derive(Debug, Clone, Copy)]
++pub enum MediaCommand {
++    Play,
++    Pause,
++    Next,
++    Previous,
++    Seek(u32),
++}
++
++impl MediaCommand {
++    pub fn run(self, spirc: &Spirc) {
++        info!("Media control: {self:?}");
++        let result = match self {
++            MediaCommand::Play => spirc.play(),
++            MediaCommand::Pause => spirc.pause(),
++            MediaCommand::Next => spirc.next(),
++            MediaCommand::Previous => spirc.prev(),
++            MediaCommand::Seek(position_ms) => spirc.set_position_ms(position_ms),
++        };
++        if let Err(e) = result {
++            warn!("Media control {self:?} failed: {e}");
++        }
++    }
++}
++
++#[cfg(windows)]
++pub use windows_smtc::MediaControls;
++
++#[cfg(windows)]
++mod windows_smtc {
++    use std::sync::atomic::{AtomicU32, Ordering};
++    use std::sync::mpsc;
++    use std::thread;
++
++    use librespot::metadata::audio::{AudioItem, UniqueFields};
++    use librespot::playback::player::PlayerEvent;
++    use log::{debug, info, warn};
++    use tokio::sync::mpsc::UnboundedSender;
++    use windows::Foundation::{TimeSpan, TypedEventHandler, Uri};
++    use windows::Media::{
++        MediaPlaybackStatus, MediaPlaybackType, PlaybackPositionChangeRequestedEventArgs,
++        SystemMediaTransportControls, SystemMediaTransportControlsButton,
++        SystemMediaTransportControlsButtonPressedEventArgs,
++        SystemMediaTransportControlsTimelineProperties,
++    };
++    use windows::Storage::Streams::RandomAccessStreamReference;
++    use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
++    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
++    use windows::Win32::System::WinRT::{
++        ISystemMediaTransportControlsInterop, RO_INIT_MULTITHREADED, RoInitialize,
++    };
++    use windows::Win32::UI::WindowsAndMessaging::{
++        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, MSG, RegisterClassW,
++        TranslateMessage, WINDOW_EX_STYLE, WNDCLASSW, WS_OVERLAPPED,
++    };
++    use windows::core::{HSTRING, Ref, Result, w};
++
++    use super::MediaCommand;
++
++    /// 100 ns ticks per millisecond.
++    const TICKS_PER_MS: i64 = 10_000;
++
++    /// Cover size to show, Spotify usually offers 64, 300 and 640 px.
++    const PREFERRED_COVER_WIDTH: i32 = 300;
++
++    pub struct MediaControls {
++        smtc: SystemMediaTransportControls,
++        duration_ms: AtomicU32,
++    }
++
++    impl MediaControls {
++        /// Registers librespot with Windows. The controls need a window: a hidden one is created
++        /// on a dedicated thread, which then sleeps in its message loop.
++        pub fn start(commands: UnboundedSender<MediaCommand>) -> Result<Self> {
++            let (sender, receiver) = mpsc::channel();
++            thread::Builder::new()
++                .name("media-controls".into())
++                .spawn(move || {
++                    // Multithreaded apartment, so that the controls can be updated from any thread.
++                    let _ = unsafe { RoInitialize(RO_INIT_MULTITHREADED) };
++                    let created = create(commands);
++                    let ok = created.is_ok();
++                    let _ = sender.send(created);
++                    if ok {
++                        run_message_loop();
++                    }
++                })
++                .map_err(|e| {
++                    windows::core::Error::new(windows::core::HRESULT(-1), e.to_string())
++                })?;
++
++            let smtc = receiver.recv().map_err(|e| {
++                windows::core::Error::new(windows::core::HRESULT(-1), e.to_string())
++            })??;
++            info!("Windows media controls enabled");
++            Ok(Self {
++                smtc,
++                duration_ms: AtomicU32::new(0),
++            })
++        }
++
++        pub fn handle_event(&self, event: &PlayerEvent) {
++            if let Err(e) = self.try_handle_event(event) {
++                debug!("Cannot update the Windows media controls: {e}");
++            }
++        }
++
++        fn try_handle_event(&self, event: &PlayerEvent) -> Result<()> {
++            match event {
++                PlayerEvent::TrackChanged { audio_item } => self.set_track(audio_item)?,
++                PlayerEvent::Playing { position_ms, .. } => {
++                    self.set_status(MediaPlaybackStatus::Playing, *position_ms)?
++                }
++                PlayerEvent::Paused { position_ms, .. } => {
++                    self.set_status(MediaPlaybackStatus::Paused, *position_ms)?
++                }
++                PlayerEvent::Seeked { position_ms, .. }
++                | PlayerEvent::PositionCorrection { position_ms, .. } => {
++                    self.set_position(*position_ms)?
++                }
++                // Playback stopped or moved to another device: let other apps get the media keys.
++                PlayerEvent::Stopped { .. } | PlayerEvent::SessionDisconnected { .. } => {
++                    self.smtc.SetPlaybackStatus(MediaPlaybackStatus::Stopped)?;
++                    self.smtc.SetIsEnabled(false)?;
++                }
++                _ => {}
++            }
++            Ok(())
++        }
++
++        fn set_track(&self, item: &AudioItem) -> Result<()> {
++            self.duration_ms.store(item.duration_ms, Ordering::Relaxed);
++
++            let (artist, album) = match &item.unique_fields {
++                UniqueFields::Track { artists, album, .. } => (
++                    artists
++                        .iter()
++                        .map(|a| a.name.as_str())
++                        .collect::<Vec<_>>()
++                        .join(", "),
++                    album.clone(),
++                ),
++                UniqueFields::Local { artists, album, .. } => (
++                    artists.clone().unwrap_or_default(),
++                    album.clone().unwrap_or_default(),
++                ),
++                UniqueFields::Episode { show_name, .. } => (show_name.clone(), String::new()),
++            };
++
++            let updater = self.smtc.DisplayUpdater()?;
++            updater.SetType(MediaPlaybackType::Music)?;
++            let music = updater.MusicProperties()?;
++            music.SetTitle(&HSTRING::from(item.name.as_str()))?;
++            music.SetArtist(&HSTRING::from(artist.as_str()))?;
++            music.SetAlbumTitle(&HSTRING::from(album.as_str()))?;
++
++            // Windows downloads the cover itself.
++            let cover = item
++                .covers
++                .iter()
++                .min_by_key(|c| (c.width - PREFERRED_COVER_WIDTH).abs());
++            match cover {
++                Some(cover) => {
++                    updater.SetThumbnail(&RandomAccessStreamReference::CreateFromUri(
++                        &Uri::CreateUri(&HSTRING::from(cover.url.as_str()))?,
++                    )?)?
++                }
++                None => updater.SetThumbnail(None)?,
++            }
++            updater.Update()?;
++            self.smtc.SetIsEnabled(true)?;
++            self.set_position(0)
++        }
++
++        fn set_status(&self, status: MediaPlaybackStatus, position_ms: u32) -> Result<()> {
++            self.smtc.SetIsEnabled(true)?;
++            self.smtc.SetPlaybackStatus(status)?;
++            self.set_position(position_ms)
++        }
++
++        fn set_position(&self, position_ms: u32) -> Result<()> {
++            let duration_ms = self.duration_ms.load(Ordering::Relaxed);
++            let timeline = SystemMediaTransportControlsTimelineProperties::new()?;
++            timeline.SetStartTime(TimeSpan::default())?;
++            timeline.SetMinSeekTime(TimeSpan::default())?;
++            timeline.SetEndTime(ticks(duration_ms))?;
++            timeline.SetMaxSeekTime(ticks(duration_ms))?;
++            timeline.SetPosition(ticks(position_ms.min(duration_ms)))?;
++            self.smtc.UpdateTimelineProperties(&timeline)
++        }
++    }
++
++    fn ticks(ms: u32) -> TimeSpan {
++        TimeSpan {
++            Duration: ms as i64 * TICKS_PER_MS,
++        }
++    }
++
++    fn create(commands: UnboundedSender<MediaCommand>) -> Result<SystemMediaTransportControls> {
++        let hwnd = create_hidden_window()?;
++        let interop = windows::core::factory::<
++            SystemMediaTransportControls,
++            ISystemMediaTransportControlsInterop,
++        >()?;
++        let smtc: SystemMediaTransportControls = unsafe { interop.GetForWindow(hwnd)? };
++
++        smtc.SetIsPlayEnabled(true)?;
++        smtc.SetIsPauseEnabled(true)?;
++        smtc.SetIsStopEnabled(true)?;
++        smtc.SetIsNextEnabled(true)?;
++        smtc.SetIsPreviousEnabled(true)?;
++        smtc.SetIsEnabled(false)?;
++
++        let button_commands = commands.clone();
++        smtc.ButtonPressed(&TypedEventHandler::new(
++            move |_: Ref<SystemMediaTransportControls>,
++                  args: Ref<SystemMediaTransportControlsButtonPressedEventArgs>| {
++                let command = match args.ok()?.Button()? {
++                    SystemMediaTransportControlsButton::Play => Some(MediaCommand::Play),
++                    SystemMediaTransportControlsButton::Pause
++                    | SystemMediaTransportControlsButton::Stop => Some(MediaCommand::Pause),
++                    SystemMediaTransportControlsButton::Next => Some(MediaCommand::Next),
++                    SystemMediaTransportControlsButton::Previous => Some(MediaCommand::Previous),
++                    _ => None,
++                };
++                if let Some(command) = command {
++                    let _ = button_commands.send(command);
++                }
++                Ok(())
++            },
++        ))?;
++
++        smtc.PlaybackPositionChangeRequested(&TypedEventHandler::new(
++            move |_: Ref<SystemMediaTransportControls>,
++                  args: Ref<PlaybackPositionChangeRequestedEventArgs>| {
++                let ticks = args.ok()?.RequestedPlaybackPosition()?.Duration;
++                let position_ms = (ticks / TICKS_PER_MS).clamp(0, u32::MAX as i64) as u32;
++                let _ = commands.send(MediaCommand::Seek(position_ms));
++                Ok(())
++            },
++        ))?;
++
++        Ok(smtc)
++    }
++
++    /// The controls are bound to a window; it is never shown.
++    fn create_hidden_window() -> Result<HWND> {
++        unsafe extern "system" fn window_proc(
++            hwnd: HWND,
++            msg: u32,
++            wparam: WPARAM,
++            lparam: LPARAM,
++        ) -> LRESULT {
++            unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
++        }
++
++        unsafe {
++            let instance = GetModuleHandleW(None)?;
++            let class = WNDCLASSW {
++                lpfnWndProc: Some(window_proc),
++                hInstance: instance.into(),
++                lpszClassName: w!("LibrespotMediaControls"),
++                ..Default::default()
++            };
++            RegisterClassW(&class);
++            CreateWindowExW(
++                WINDOW_EX_STYLE::default(),
++                w!("LibrespotMediaControls"),
++                w!("librespot"),
++                WS_OVERLAPPED,
++                0,
++                0,
++                0,
++                0,
++                None,
++                None,
++                Some(instance.into()),
++                None,
++            )
++        }
++    }
++
++    /// Keeps the hidden window responsive (e.g. to system broadcasts). Blocks without using CPU.
++    fn run_message_loop() {
++        let mut message = MSG::default();
++        unsafe {
++            while GetMessageW(&mut message, None, 0, 0).as_bool() {
++                let _ = TranslateMessage(&message);
++                DispatchMessageW(&message);
++            }
++        }
++        warn!("Windows media controls stopped");
++    }
++}

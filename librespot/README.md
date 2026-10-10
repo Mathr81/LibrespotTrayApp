@@ -41,6 +41,16 @@ runtime C lié statiquement (aucun « Visual C++ Redistributable » nécessaire)
   bloquer librespot dans le silence. Si le périphérique configuré n'existe pas, le périphérique par
   défaut est utilisé.
 
+### `librespot.patch` — contrôles multimédias Windows (`--media-controls`)
+
+Nouveau module `src/media_controls.rs` : librespot s'enregistre auprès des
+« System Media Transport Controls » de Windows. Les touches multimédias du casque et du clavier
+(lecture/pause, suivant, précédent) pilotent la lecture, et Windows affiche le titre, l'artiste,
+la pochette et la progression (affichage du volume, panneau multimédia). Les contrôles sont liés à
+une fenêtre cachée sur un thread qui dort dans sa boucle de messages : aucun CPU utilisé hors
+événements. Quand la lecture s'arrête ou passe sur un autre appareil, les touches sont rendues aux
+autres applications.
+
 ### `cpal.patch` — cpal 0.16.0 (WASAPI)
 
 Les flux WASAPI en mode partagé n'acceptent nativement que le format de mixage du moteur audio.

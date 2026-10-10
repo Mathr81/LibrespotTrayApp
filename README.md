@@ -33,6 +33,8 @@ qualité, et aucune saccade même quand le jeu occupe le processeur.
 * Paramètres : nom et type de l'appareil, qualité, périphérique de sortie, normalisation du volume,
   volume de départ ou reprise du dernier volume, autoplay, priorité, taille et dossier du cache
   audio, visibilité sur le réseau local, journal détaillé, déconnexion du compte.
+* **Touches multimédias** : lecture/pause, suivant et précédent depuis le casque ou le clavier, et
+  titre, artiste et pochette affichés par Windows (affichage du volume, panneau multimédia).
 * Lancement au démarrage de Windows, journal consultable en un clic.
 * Une seule instance : relancer l'application ouvre ses paramètres.
 
