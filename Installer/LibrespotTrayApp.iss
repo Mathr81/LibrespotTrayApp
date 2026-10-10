@@ -31,6 +31,8 @@ DisableDirPage=auto
 ; Per-machine install by default; the user can choose a per-user install (no admin rights).
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
+; The startup entry and the cache are per-user on purpose: they belong to the user running setup.
+UsedUserAreasWarning=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
