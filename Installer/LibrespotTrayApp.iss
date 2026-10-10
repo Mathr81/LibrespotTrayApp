@@ -1,8 +1,8 @@
 ; Inno Setup 6 script. Built by the CI workflow:
-;   ISCC.exe /DSourceDir=<publish dir> /DAppVersion=2.0.0 /DAppNumericVersion=2.0.0 LibrespotTrayApp.iss
+;   ISCC.exe /DPublishDir=<publish dir> /DAppVersion=2.0.0 /DAppNumericVersion=2.0.0 LibrespotTrayApp.iss
 
-#ifndef SourceDir
-  #define SourceDir "..\publish_output"
+#ifndef PublishDir
+  #define PublishDir "..\publish_output"
 #endif
 #ifndef AppVersion
   #define AppVersion "dev"
@@ -56,7 +56,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Type: files; Name: "{app}\app.ico"
 
 [Files]
-Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\Librespot Tray App"; Filename: "{app}\{#AppExe}"
