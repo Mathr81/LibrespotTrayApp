@@ -1,0 +1,32 @@
+diff --git a/src/host/wasapi/device.rs b/src/host/wasapi/device.rs
+index d660aa8..0e796b9 100644
+--- a/src/host/wasapi/device.rs
++++ b/src/host/wasapi/device.rs
+@@ -675,10 +675,17 @@ impl Device {
+                 let format_attempt = config_to_waveformatextensible(config, sample_format)
+                     .ok_or(BuildStreamError::StreamConfigNotSupported)?;
+                 let share_mode = Audio::AUDCLNT_SHAREMODE_SHARED;
++                let mut stream_flags = Audio::AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
+ 
+                 // Ensure the format is supported.
+                 match super::device::is_format_supported(&audio_client, &format_attempt.Format) {
+-                    Ok(false) => return Err(BuildStreamError::StreamConfigNotSupported),
++                    // Shared mode streams only natively accept the mix format of the audio engine.
++                    // Let the engine convert other PCM formats (sample rate, channels, sample type)
++                    // with its high quality resampler.
++                    Ok(false) => {
++                        stream_flags |= Audio::AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
++                            | Audio::AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
++                    }
+                     Err(_) => return Err(BuildStreamError::DeviceNotAvailable),
+                     _ => (),
+                 }
+@@ -687,7 +694,7 @@ impl Device {
+                 audio_client
+                     .Initialize(
+                         share_mode,
+-                        Audio::AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
++                        stream_flags,
+                         buffer_duration,
+                         0,
+                         &format_attempt.Format,

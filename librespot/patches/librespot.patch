@@ -1,0 +1,361 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index c135de1..b38bb2c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -185,6 +185,20 @@ version = "0.1.13"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "41e67cd8309bbd06cd603a9e693a784ac2e5d1e955f11286e355089fcab3047c"
+ 
++[[package]]
++name = "audio_thread_priority"
++version = "0.33.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "716b7ed619475af650836aa562422e724b807201acd10046298d6efa22b558a3"
++dependencies = [
++ "cfg-if",
++ "dbus",
++ "libc",
++ "log",
++ "mach",
++ "windows-sys 0.59.0",
++]
++
+ [[package]]
+ name = "autocfg"
+ version = "1.5.0"
+@@ -384,10 +398,9 @@ dependencies = [
+ [[package]]
+ name = "cpal"
+ version = "0.16.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "cbd307f43cc2a697e2d1f8bc7a1d824b5269e052209e28883e5bc04d095aaa3f"
+ dependencies = [
+  "alsa 0.9.1",
++ "audio_thread_priority",
+  "coreaudio-rs",
+  "dasp_sample",
+  "jack",
+@@ -498,6 +511,16 @@ version = "2.9.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
+ 
++[[package]]
++name = "dbus"
++version = "0.6.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "48b5f0f36f1eebe901b0e6bee369a77ed3396334bf3f09abd46454a576f71819"
++dependencies = [
++ "libc",
++ "libdbus-sys",
++]
++
+ [[package]]
+ name = "der"
+ version = "0.7.10"
+@@ -1713,6 +1736,15 @@ version = "0.2.177"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976"
+ 
++[[package]]
++name = "libdbus-sys"
++version = "0.2.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "328c4789d42200f1eeec05bd86c9c13c7f091d2ba9a6ea35acdf51f31bc0f043"
++dependencies = [
++ "pkg-config",
++]
++
+ [[package]]
+ name = "libloading"
+ version = "0.7.4"
+@@ -2051,6 +2083,15 @@ version = "0.1.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
+ 
++[[package]]
++name = "mach"
++version = "0.3.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
++dependencies = [
++ "libc",
++]
++
+ [[package]]
+ name = "mach2"
+ version = "0.4.3"
+diff --git a/Cargo.toml b/Cargo.toml
+index c892625..0b961b0 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -209,3 +209,6 @@ assets = [
+     ["contrib/librespot.service", "lib/systemd/system/", "644"],
+     ["contrib/librespot.user.service", "lib/systemd/user/", "644"],
+ ]
++
++[patch.crates-io]
++cpal = { path = "../cpal" }
+diff --git a/playback/Cargo.toml b/playback/Cargo.toml
+index e5656ad..7fd78f2 100644
+--- a/playback/Cargo.toml
++++ b/playback/Cargo.toml
+@@ -75,7 +75,7 @@ libpulse-binding = { version = "2", optional = true, default-features = false }
+ libpulse-simple-binding = { version = "2", optional = true, default-features = false }
+ 
+ # Rodio dependencies
+-cpal = { version = "0.16", optional = true }
++cpal = { version = "0.16", optional = true, features = ["audio_thread_priority"] }
+ rodio = { version = "0.21", optional = true, default-features = false, features = [
+     "playback",
+ ] }
+diff --git a/playback/src/audio_backend/rodio.rs b/playback/src/audio_backend/rodio.rs
+index b6cd346..3d4528d 100644
+--- a/playback/src/audio_backend/rodio.rs
++++ b/playback/src/audio_backend/rodio.rs
+@@ -1,4 +1,6 @@
+ use std::process::exit;
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, Ordering};
+ use std::thread;
+ use std::time::Duration;
+ 
+@@ -71,9 +73,14 @@ impl From<cpal::SupportedStreamConfigsError> for RodioError {
+     }
+ }
+ 
++/// The output is only opened while playing: when paused or stopped, the audio device is released
++/// so that librespot uses no CPU at all, and the next playback picks up the current default device.
+ pub struct RodioSink {
+-    rodio_sink: rodio::Sink,
+-    _stream: rodio::OutputStream,
++    host: cpal::Host,
++    device: Option<String>,
++    format: AudioFormat,
++    output: Option<(rodio::Sink, rodio::OutputStream)>,
++    stream_failed: Arc<AtomicBool>,
+ }
+ 
+ fn list_formats(device: &cpal::Device) {
+@@ -142,11 +149,32 @@ fn list_outputs(host: &cpal::Host) -> Result<(), cpal::DevicesError> {
+     Ok(())
+ }
+ 
++/// Requested WASAPI buffer size: 4096 frames, about 93 ms at 44.1 kHz.
++#[cfg(target_os = "windows")]
++const WASAPI_BUFFER_FRAMES: cpal::FrameCount = 4096;
++
++/// How many times, and how often, to try reopening the output after the stream failed. Windows may
++/// need a moment to switch the default device after the current one disappeared.
++const REOPEN_ATTEMPTS: u32 = 20;
++const REOPEN_INTERVAL: Duration = Duration::from_millis(100);
++
+ fn create_sink(
+     host: &cpal::Host,
+     device: Option<String>,
+     format: AudioFormat,
++    stream_failed: &Arc<AtomicBool>,
+ ) -> Result<(rodio::Sink, rodio::OutputStream), RodioError> {
++    // cpal stops the stream for good after any error (device unplugged or disabled, format
++    // changed...). Flag it so that the sink gets reopened instead of waiting forever for the queue
++    // to drain.
++    let on_stream_error = {
++        let stream_failed = stream_failed.clone();
++        move |e: cpal::StreamError| {
++            error!("Audio output stream failed: {e}");
++            stream_failed.store(true, Ordering::Release);
++        }
++    };
++
+     let cpal_device = match device.as_deref() {
+         Some("?") => match list_outputs(host) {
+             Ok(()) => exit(0),
+@@ -157,9 +185,19 @@ fn create_sink(
+         },
+         Some(device_name) => {
+             // Ignore devices for which getting name fails, or format doesn't match
+-            host.output_devices()?
++            match host
++                .output_devices()?
+                 .find(|d| d.name().ok().is_some_and(|name| name == device_name)) // Ignore devices for which getting name fails
+-                .ok_or_else(|| RodioError::DeviceNotAvailable(device_name.to_string()))?
++            {
++                Some(device) => device,
++                // Keep playing on the default device rather than failing while the configured one
++                // is unplugged or disabled.
++                None => {
++                    warn!("Audio device \"{device_name}\" is not available, using the default device");
++                    host.default_output_device()
++                        .ok_or_else(|| RodioError::DeviceNotAvailable(device_name.to_string()))?
++                }
++            }
+         }
+         None => host
+             .default_output_device()
+@@ -193,19 +231,53 @@ fn create_sink(
+         AudioFormat::S16 => cpal::SampleFormat::I16,
+     };
+ 
+-    let mut stream = match rodio::OutputStreamBuilder::default()
++    // On Windows, first ask WASAPI for Spotify's native format (stereo, 44.1 kHz) with a larger
++    // buffer. When the device mix format differs, the (patched) cpal backend lets the Windows audio
++    // engine convert it with its high quality resampler instead of Rodio's linear interpolation,
++    // and the larger buffer absorbs scheduling hiccups when the CPU is busy (e.g. while gaming).
++    #[cfg(target_os = "windows")]
++    let native_stream = rodio::OutputStreamBuilder::default()
+         .with_device(cpal_device.clone())
+-        .with_config(&config.config())
++        .with_config(&cpal::StreamConfig {
++            channels: NUM_CHANNELS as cpal::ChannelCount,
++            sample_rate: cpal::SampleRate(SAMPLE_RATE),
++            buffer_size: cpal::BufferSize::Fixed(WASAPI_BUFFER_FRAMES),
++        })
+         .with_sample_format(sample_format)
++        .with_error_callback(on_stream_error.clone())
+         .open_stream()
+-    {
+-        Ok(exact_stream) => exact_stream,
+-        Err(e) => {
+-            warn!("unable to create Rodio output, falling back to default: {e}");
+-            rodio::OutputStreamBuilder::from_device(cpal_device)?.open_stream_or_fallback()?
+-        }
++        .inspect_err(|e| warn!("unable to open native 44.1 kHz stereo output: {e}"))
++        .ok();
++    #[cfg(not(target_os = "windows"))]
++    let native_stream = None;
++
++    let mut stream = match native_stream {
++        Some(native_stream) => native_stream,
++        None => match rodio::OutputStreamBuilder::default()
++            .with_device(cpal_device.clone())
++            .with_config(&config.config())
++            .with_sample_format(sample_format)
++            .with_error_callback(on_stream_error.clone())
++            .open_stream()
++        {
++            Ok(exact_stream) => exact_stream,
++            Err(e) => {
++                warn!("unable to create Rodio output, falling back to default: {e}");
++                rodio::OutputStreamBuilder::from_device(cpal_device)?
++                    .with_error_callback(on_stream_error)
++                    .open_stream_or_fallback()?
++            }
++        },
+     };
+ 
++    let stream_config = stream.config();
++    info!(
++        "Audio output opened: {} Hz, {} channel(s), {:?}",
++        stream_config.sample_rate(),
++        stream_config.channel_count(),
++        stream_config.sample_format()
++    );
++
+     // disable logging on stream drop
+     stream.log_on_drop(false);
+ 
+@@ -219,24 +291,81 @@ pub fn open(host: cpal::Host, device: Option<String>, format: AudioFormat) -> Ro
+         host.id().name()
+     );
+ 
+-    let (sink, stream) = create_sink(&host, device, format).unwrap();
++    if device.as_deref() == Some("?") {
++        match list_outputs(&host) {
++            Ok(()) => exit(0),
++            Err(e) => {
++                error!("{e}");
++                exit(1);
++            }
++        }
++    }
+ 
+     debug!("Rodio sink was created");
+     RodioSink {
+-        rodio_sink: sink,
+-        _stream: stream,
++        host,
++        device,
++        format,
++        output: None,
++        stream_failed: Arc::new(AtomicBool::new(false)),
++    }
++}
++
++impl RodioSink {
++    fn stream_failed(&self) -> bool {
++        self.stream_failed.load(Ordering::Acquire)
++    }
++
++    /// Returns a usable output, (re)opening it if needed.
++    fn ensure_output(&mut self) -> Result<&rodio::Sink, RodioError> {
++        if self.output.is_some() && self.stream_failed() {
++            warn!("Reopening the audio output");
++            self.output = None;
++        }
++
++        if self.output.is_none() {
++            let mut attempt = 1;
++            let (sink, stream) = loop {
++                self.stream_failed.store(false, Ordering::Release);
++                match create_sink(
++                    &self.host,
++                    self.device.clone(),
++                    self.format,
++                    &self.stream_failed,
++                ) {
++                    Ok(output) => break output,
++                    Err(e) if attempt < REOPEN_ATTEMPTS => {
++                        debug!("Cannot open the audio output yet: {e}");
++                        attempt += 1;
++                        thread::sleep(REOPEN_INTERVAL);
++                    }
++                    Err(e) => return Err(e),
++                }
++            };
++            sink.play();
++            self.output = Some((sink, stream));
++        }
++
++        Ok(&self.output.as_ref().unwrap().0)
+     }
+ }
+ 
+ impl Sink for RodioSink {
+     fn start(&mut self) -> SinkResult<()> {
+-        self.rodio_sink.play();
++        self.ensure_output()?.play();
+         Ok(())
+     }
+ 
+     fn stop(&mut self) -> SinkResult<()> {
+-        self.rodio_sink.sleep_until_end();
+-        self.rodio_sink.pause();
++        if let Some((sink, stream)) = self.output.take() {
++            // Let the queued audio play out, unless the stream is dead and will never drain.
++            while !sink.empty() && !self.stream_failed() {
++                thread::sleep(Duration::from_millis(10));
++            }
++            drop(sink);
++            drop(stream);
++            debug!("Audio output closed");
++        }
+         Ok(())
+     }
+ 
+@@ -250,12 +379,15 @@ impl Sink for RodioSink {
+             SAMPLE_RATE,
+             samples_f32,
+         );
+-        self.rodio_sink.append(source);
++        self.ensure_output()?.append(source);
+ 
+         // Chunk sizes seem to be about 256 to 3000 ish items long.
+         // Assuming they're on average 1628 then a half second buffer is:
+         // 44100 elements --> about 27 chunks
+-        while self.rodio_sink.len() > 26 {
++        while let Some((sink, _)) = self.output.as_ref() {
++            if sink.len() <= 26 || self.stream_failed() {
++                break;
++            }
+             // sleep and wait for rodio to drain a bit
+             thread::sleep(Duration::from_millis(10));
+         }

@@ -1,0 +1,84 @@
+name: Build
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*.*.*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write # create the GitHub release on tags
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          } else {
+            $base = ([xml](Get-Content LibrespotTrayApp/LibrespotTrayApp.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+            $version = "$base-dev.$env:GITHUB_RUN_NUMBER"
+          }
+          $numeric = ($version -split '-')[0]
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "numeric=$numeric" >> $env:GITHUB_OUTPUT
+          Write-Host "Version $version ($numeric)"
+
+      # librespot takes several minutes to compile: reuse it while its build inputs are unchanged.
+      - name: Cache librespot
+        id: librespot-cache
+        uses: actions/cache@v4
+        with:
+          path: librespot/bin/librespot.exe
+          key: librespot-${{ runner.os }}-${{ hashFiles('librespot/build.ps1', 'librespot/patches/**') }}
+
+      - name: Build librespot
+        if: steps.librespot-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: ./librespot/build.ps1
+
+      - name: Check librespot
+        shell: pwsh
+        run: |
+          ./librespot/bin/librespot.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish LibrespotTrayApp
+        run: dotnet publish LibrespotTrayApp/LibrespotTrayApp.csproj -c Release -o publish_output -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          & $iscc "/DSourceDir=$PWD\publish_output" "/DAppVersion=${{ steps.version.outputs.version }}" "/DAppNumericVersion=${{ steps.version.outputs.numeric }}" "/O$PWD\dist" Installer\LibrespotTrayApp.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: LibrespotTrayApp-${{ steps.version.outputs.version }}
+          path: dist/*.exe
+
+      - name: Create release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: LibrespotTrayApp ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*.exe

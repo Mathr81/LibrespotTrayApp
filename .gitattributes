@@ -1,0 +1,7 @@
+* text=auto
+
+# Patches must keep LF line endings to apply on the librespot sources.
+*.patch text eol=lf
+
+*.ico binary
+*.exe binary

@@ -1,6 +1,7 @@
-
-# Visual Studio
+# Visual Studio / Rider / VS Code
 .vs/
+.idea/
+.vscode/
 *.suo
 *.user
 
@@ -9,18 +10,17 @@
 [Rr]elease/
 [Bb]in/
 [Oo]bj/
+publish_output/
+dist/
+*.pdb
 
-# Packages
-*.nupkg
-*.snupkg
+# librespot build (librespot/build.ps1)
+librespot/.build/
+librespot/bin/
+
+# Installer output
+Installer/Output/
+*.exe
 
 # Logs
 *.log
-
-# Other
-*.pdb
-*.json
-
-# Publish folder
-**/publish/
-publish_output/

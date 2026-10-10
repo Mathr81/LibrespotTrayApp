@@ -1,59 +1,92 @@
 # ✨ Librespot Tray App ✨
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Mathr81/LibrespotTrayApp/release.yml?branch=main&label=Build%20&%20Release&style=for-the-badge)](https://github.com/Mathr81/LibrespotTrayApp/actions/workflows/release.yml)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Mathr81/LibrespotTrayApp?style=for-the-badge&label=Latest%20Release)](https://github.com/Mathr81/LibrespotTrayApp/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/Mathr81/LibrespotTrayApp/build.yml?branch=main&label=Build&style=for-the-badge)](https://github.com/Mathr81/LibrespotTrayApp/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/Mathr81/LibrespotTrayApp?style=for-the-badge&label=Latest%20Release)](https://github.com/Mathr81/LibrespotTrayApp/releases/latest)
 
 ---
 
-## 🚀 Simplifiez Votre Expérience Librespot !
+## 🚀 Spotify, sans le client Spotify
 
-Librespot Tray App est une application légère et intuitive pour Windows, conçue pour gérer et interagir avec votre instance [Librespot](https://github.com/librespot-org/librespot) directement depuis votre barre des tâches. Oubliez les lignes de commande et les configurations complexes : prenez le contrôle de votre lecteur Spotify Connect en un clic !
+Librespot Tray App transforme votre PC Windows en appareil **Spotify Connect** grâce à
+[librespot](https://github.com/librespot-org/librespot), discrètement depuis la zone de
+notification. Vous pilotez la musique depuis votre téléphone (ou n'importe quel appareil Spotify),
+et votre PC la joue — sans faire tourner le client Spotify (Electron/Chromium) et ses centaines de
+Mo de RAM.
 
-### Pourquoi choisir Librespot Tray App ?
+Pensé pour **jouer en écoutant de la musique** : le moins de RAM et de CPU possible, une très bonne
+qualité, et aucune saccade même quand le jeu occupe le processeur.
 
-*   **Contrôle Facile :** Démarrez, arrêtez et redémarrez Librespot sans jamais quitter votre bureau.
-*   **Configuration Simplifiée :** Accédez à une interface graphique conviviale pour ajuster les paramètres de Librespot (nom de l'appareil, bitrate, normalisation du volume, etc.).
-*   **Démarrage Automatique :** Configurez l'application pour qu'elle se lance avec Windows, assurant que votre appareil Spotify Connect est toujours prêt.
-*   **Gestion des Logs :** Ouvrez rapidement les fichiers de log pour diagnostiquer d'éventuels problèmes.
-*   **Léger & Discret :** S'intègre parfaitement à votre système sans consommer de ressources excessives.
+### Pourquoi c'est léger et sans saccades
+
+| | |
+|---|---|
+| **Qualité maximale** | 320 kbit/s, sortie en flottant 32 bits (pas de conversion ni de dithering) ; si votre carte son tourne à 48 kHz, c'est le rééchantillonneur haute qualité de Windows qui convertit, pas une interpolation linéaire. |
+| **Anti-saccades** | Thread audio enregistré auprès de MMCSS (comme les lecteurs audio pro), tampon audio plus large, priorité « supérieure à la normale » par défaut, et librespot exclu du mode « efficacité énergétique » (EcoQoS) de Windows 11, qui provoque des coupures. |
+| **0 % CPU en pause** | La carte son est libérée quand la musique est en pause. |
+| **App tray minuscule** | Mode efficacité (EcoQoS) et priorité mémoire basse pour l'app tray elle-même, mémoire rendue à Windows quand elle ne sert pas : quelques Mo de RAM en jeu. |
+| **Fiable** | librespot est relancé automatiquement s'il s'arrête (avec temporisation), après une mise en veille, et se reconnecte tout seul si vous débranchez le casque. Il ne survit jamais à l'app tray (même en cas de plantage). |
+
+### Fonctionnalités
+
+* Connexion à Spotify au premier lancement (page de connexion ouverte dans le navigateur), puis
+  identifiants mémorisés.
+* Paramètres : nom et type de l'appareil, qualité, périphérique de sortie, normalisation du volume,
+  volume de départ ou reprise du dernier volume, autoplay, priorité, taille et dossier du cache
+  audio, visibilité sur le réseau local, journal détaillé, déconnexion du compte.
+* Lancement au démarrage de Windows, journal consultable en un clic.
+* Une seule instance : relancer l'application ouvre ses paramètres.
 
 ---
 
-## 📥 Téléchargement & Installation (Recommandé)
+## 📥 Installation
 
-Prêt à transformer votre PC en un récepteur Spotify Connect sans effort ?
+1. Téléchargez `LibrespotTrayApp-Installer-vX.Y.Z.exe` depuis la
+   [dernière release](https://github.com/Mathr81/LibrespotTrayApp/releases/latest).
+2. Lancez-le : il met à jour une version précédente en place (paramètres et connexion conservés).
+3. Au premier lancement, connectez-vous à Spotify dans la page qui s'ouvre.
 
-La manière la plus simple et rapide d'installer **Librespot Tray App** est d'utiliser notre installateur Windows.
-
-➡️ **[Téléchargez la dernière version ici !](https://github.com/Mathr81/LibrespotTrayApp/releases/latest)** ⬅️
-
-1.  Rendez-vous sur la page des [Releases](https://github.com/Mathr81/LibrespotTrayApp/releases/latest).
-2.  Téléchargez le fichier `LibrespotTrayApp-Installer-vX.Y.Z.exe` (remplacez `X.Y.Z` par la dernière version).
-3.  Exécutez l'installateur et suivez les instructions. C'est tout !
-
----
+Windows 10 ou 11 64 bits. Un compte **Spotify Premium** est nécessaire (exigence de Spotify pour
+les appareils Connect).
 
 ## 🛠️ Utilisation
 
-Une fois installé, l'application résidera discrètement dans votre barre des tâches (près de l'horloge).
+* **Double-clic** sur l'icône : paramètres.
+* **Clic droit** : état de la connexion, paramètres, redémarrage de librespot, démarrage avec
+  Windows, journal, quitter.
+* L'icône est **verte** quand l'appareil est prêt, **grise** sinon.
 
-*   **Clic droit sur l'icône :** Accédez aux options de configuration, redémarrez Librespot, ou quittez l'application.
-*   **Configuration :** Ajustez les paramètres de Librespot via l'interface graphique intuitive.
+Puis dans Spotify (téléphone, web, etc.) : icône des appareils → choisissez votre PC.
+
+### Astuce qualité audio
+
+Pour un chemin audio sans aucun rééchantillonnage, réglez le format de votre sortie audio sur
+**44 100 Hz** (Paramètres Windows → Son → votre périphérique → Format). C'est facultatif : à 48 kHz,
+la conversion est faite par Windows avec une bonne qualité.
+
+## 🗂️ Fichiers
+
+Tout est dans `%LocalAppData%\LibrespotTrayApp` : `config.json` (paramètres), `librespot.log`
+(journal de la session, `librespot.previous.log` pour la précédente), `session\` (identifiants
+Spotify et dernier volume) et `cache\` (cache audio, limité à 2 Go par défaut).
 
 ---
 
-## 📸 Aperçus (Bientôt !)
+## 🧑‍💻 Développement
 
-*(Insérez ici des captures d'écran ou un GIF animé de l'application en action. Cela rendra le README encore plus attrayant !)*
+* `LibrespotTrayApp/` : application C# (.NET 10, WinForms).
+* `librespot/` : compilation de `librespot.exe` depuis les sources (voir
+  [librespot/README.md](librespot/README.md)).
+* `Installer/` : script Inno Setup.
 
----
+```powershell
+./librespot/build.ps1                     # compile librespot.exe (Rust requis)
+dotnet build LibrespotTrayApp -c Release  # ou ouvrez LibrespotTrayApp.sln
+```
+
+La CI (`.github/workflows/build.yml`) compile tout et produit l'installateur à chaque push ; un tag
+`vX.Y.Z` publie une release.
 
 ## 🤝 Contribuer
 
-Nous accueillons toutes les contributions ! Si vous avez des idées, des rapports de bugs ou des améliorations, n'hésitez pas à ouvrir une [issue](https://github.com/Mathr81/LibrespotTrayApp/issues) ou à soumettre une [pull request](https://github.com/Mathr81/LibrespotTrayApp/pulls).
-
----
-
-## 📄 Licence
-
-Ce projet est sous licence [MIT](LICENSE).
+Les [issues](https://github.com/Mathr81/LibrespotTrayApp/issues) et
+[pull requests](https://github.com/Mathr81/LibrespotTrayApp/pulls) sont les bienvenues.

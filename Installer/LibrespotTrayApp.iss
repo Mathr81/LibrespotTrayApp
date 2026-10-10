@@ -1,26 +1,97 @@
+; Inno Setup 6 script. Built by the CI workflow:
+;   ISCC.exe /DSourceDir=<publish dir> /DAppVersion=2.0.0 /DAppNumericVersion=2.0.0 LibrespotTrayApp.iss
+
+#ifndef SourceDir
+  #define SourceDir "..\publish_output"
+#endif
+#ifndef AppVersion
+  #define AppVersion "dev"
+#endif
+#ifndef AppNumericVersion
+  #define AppNumericVersion "0.0.0"
+#endif
+
+#define AppName "LibrespotTrayApp"
+#define AppExe "LibrespotTrayApp.exe"
+
 [Setup]
-AppName=LibrespotTrayApp
+; Same AppId as the 1.x installer (which used the AppName), so that it is upgraded in place.
+AppId={#AppName}
+AppName=Librespot Tray App
 AppVersion={#AppVersion}
+AppVerName=Librespot Tray App {#AppVersion}
 AppPublisher=Mathr81
-DefaultDirName={autopf}\LibrespotTrayApp
+AppPublisherURL=https://github.com/Mathr81/LibrespotTrayApp
+AppSupportURL=https://github.com/Mathr81/LibrespotTrayApp/issues
+VersionInfoVersion={#AppNumericVersion}
+DefaultDirName={autopf}\{#AppName}
 DisableProgramGroupPage=yes
 DisableWelcomePage=yes
-OutputBaseFilename=LibrespotTrayApp-Installer-{#AppVersion}
-Compression=lzma
+DisableDirPage=auto
+; Per-machine install by default; the user can choose a per-user install (no admin rights).
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=10.0
+OutputBaseFilename=LibrespotTrayApp-Installer-v{#AppVersion}
+Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
-SetupIconFile=..\app.ico
-UninstallDisplayIcon={app}\LibrespotTrayApp.exe
+SetupIconFile=..\LibrespotTrayApp\Resources\app.ico
+UninstallDisplayIcon={app}\{#AppExe}
+UninstallDisplayName=Librespot Tray App
+CloseApplications=no
+
+[Languages]
+Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "startup"; Description: "Lancer au démarrage de Windows"; GroupDescription: "Options :"
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[InstallDelete]
+; Leftovers of the 1.x self-contained build that a 2.x install does not overwrite.
+Type: files; Name: "{app}\app.ico"
 
 [Files]
-Source: "{#MyAppPath}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\LibrespotTrayApp"; Filename: "{app}\LibrespotTrayApp.exe"
-Name: "{autodesktop}\LibrespotTrayApp"; Filename: "{app}\LibrespotTrayApp.exe"
+Name: "{autoprograms}\Librespot Tray App"; Filename: "{app}\{#AppExe}"
+Name: "{autodesktop}\Librespot Tray App"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppName}"; ValueData: """{app}\{#AppExe}"""; Tasks: startup
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#AppName}"; Flags: deletevalue uninsdeletevalue; Check: not WizardIsTaskSelected('startup')
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#AppName}"; Flags: dontcreatekey uninsdeletevalue
+
+[UninstallDelete]
+; The audio cache can be large; settings, logs and the Spotify login are kept.
+Type: filesandordirs; Name: "{localappdata}\{#AppName}\cache"
 
 [Run]
-Filename: "{app}\LibrespotTrayApp.exe"; Description: "{cm:LaunchProgram,LibrespotTrayApp}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,Librespot Tray App}"; Flags: nowait postinstall skipifsilent
 
-[UninstallRun]
-Filename: "{app}\unins000.exe"; Parameters: "/SILENT"
+[Code]
+procedure StopRunningApp();
+var
+  ResultCode: Integer;
+begin
+  // librespot.exe is in a kill-on-close job of the tray app: it stops with it.
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppExe}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(500);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  StopRunningApp();
+  Result := '';
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  StopRunningApp();
+  Result := True;
+end;
