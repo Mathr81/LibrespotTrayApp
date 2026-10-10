@@ -161,22 +161,20 @@ internal static unsafe partial class NativeMethods
     public static bool AssignToJob(nint job, nint processHandle) => job != 0 && AssignProcessToJobObject(job, processHandle);
 
     /// <summary>
-    /// Makes the tray app survive the Ctrl+C events it sends to librespot. A handler is used rather
-    /// than the "ignore Ctrl+C" flag, because that flag would be inherited by librespot.
+    /// Sends Ctrl+C to a console process (librespot runs in a hidden console). The event reaches
+    /// every process attached to that console, the caller included: only call this from the
+    /// short-lived helper process (see <see cref="Program"/>), never from the tray app itself.
     /// </summary>
-    public static void InstallCtrlCHandler() => SetConsoleCtrlHandler(&IgnoreCtrlEvent, true);
-
-    [UnmanagedCallersOnly]
-    private static int IgnoreCtrlEvent(uint ctrlType) => 1;
-
-    /// <summary>Sends Ctrl+C to a console process (librespot runs in a hidden console).</summary>
     public static bool SendCtrlC(int processId)
     {
+        FreeConsole();
         if (!AttachConsole((uint)processId))
         {
             return false;
         }
 
+        // Ignore the event ourselves (the helper never starts any process that could inherit this).
+        SetConsoleCtrlHandler(null, true);
         try
         {
             return GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);

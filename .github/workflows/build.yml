@@ -59,6 +59,45 @@ jobs:
       - name: Publish LibrespotTrayApp
         run: dotnet publish LibrespotTrayApp/LibrespotTrayApp.csproj -c Release -o publish_output -p:Version=${{ steps.version.outputs.version }}
 
+      # Stopping librespot gracefully goes through a Ctrl+C sent by a helper instance of the app:
+      # check that it works and that the process that asked for it survives.
+      - name: Test graceful stop of librespot
+        shell: pwsh
+        run: |
+          function Start-Hidden([string]$exe, [string[]]$arguments) {
+            # Same way as the tray app: hidden console, redirected output.
+            $psi = [System.Diagnostics.ProcessStartInfo]::new($exe)
+            foreach ($a in $arguments) { $psi.ArgumentList.Add($a) }
+            $psi.UseShellExecute = $false
+            $psi.CreateNoWindow = $true
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $p = [System.Diagnostics.Process]::Start($psi)
+            $p.BeginOutputReadLine()
+            $p.BeginErrorReadLine()
+            return $p
+          }
+          function Stop-WithHelper([System.Diagnostics.Process]$target) {
+            $helper = Start-Process publish_output\LibrespotTrayApp.exe -ArgumentList '--send-ctrl-c', $target.Id -PassThru -Wait
+            Write-Host "Helper exit code: $($helper.ExitCode)"
+            if (-not $target.WaitForExit(5000)) {
+              $target.Kill()
+              throw "The process did not stop after Ctrl+C"
+            }
+          }
+
+          $ping = Start-Hidden 'ping.exe' @('-t', '127.0.0.1')
+          Start-Sleep -Seconds 2
+          Stop-WithHelper $ping
+          Write-Host "ping stopped by Ctrl+C"
+
+          $session = New-Item -ItemType Directory -Force (Join-Path $env:RUNNER_TEMP 'librespot-session')
+          $librespot = Start-Hidden 'publish_output\librespot.exe' @('--name', 'CI', '--system-cache', $session.FullName, '--disable-discovery', '--enable-oauth', '--oauth-port', '8067')
+          Start-Sleep -Seconds 3
+          if ($librespot.HasExited) { throw "librespot exited early (code $($librespot.ExitCode))" }
+          Stop-WithHelper $librespot
+          Write-Host "librespot stopped by Ctrl+C (exit code $($librespot.ExitCode)); this step is still running, so the caller survived"
+
       - name: Build installer
         shell: pwsh
         run: |

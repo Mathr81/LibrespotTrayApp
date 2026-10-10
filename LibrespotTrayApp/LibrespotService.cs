@@ -398,7 +398,7 @@ internal sealed class LibrespotService : IDisposable
                 return;
             }
 
-            if (NativeMethods.SendCtrlC(p.Id) && p.WaitForExit(3000))
+            if (SendCtrlC(p.Id) && p.WaitForExit(3000))
             {
                 return;
             }
@@ -410,6 +410,35 @@ internal sealed class LibrespotService : IDisposable
         {
             // Already gone.
         }
+    }
+
+    /// <summary>
+    /// Sending Ctrl+C requires attaching to librespot's console, and the event then reaches every
+    /// process attached to it: a throwaway instance of this executable does it, so that the tray app
+    /// itself can never be killed by it.
+    /// </summary>
+    private static bool SendCtrlC(int processId)
+    {
+        string? exe = Environment.ProcessPath;
+        if (exe == null)
+        {
+            return false;
+        }
+
+        var startInfo = new ProcessStartInfo(exe)
+        {
+            ArgumentList = { Program.SendCtrlCArgument, processId.ToString(CultureInfo.InvariantCulture) },
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        using Process? helper = Process.Start(startInfo);
+        if (helper == null || !helper.WaitForExit(5000))
+        {
+            return false;
+        }
+
+        // The helper may also be ended by the event it sent: only a clean failure means "not sent".
+        return helper.ExitCode != 1;
     }
 
     private void DeleteCachedCredentials()

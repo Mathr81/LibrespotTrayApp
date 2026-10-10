@@ -7,9 +7,17 @@ internal static class Program
     private const string SingleInstanceMutexName = "LibrespotTrayApp.SingleInstance";
     private const string ActivationEventName = "LibrespotTrayApp.Activate";
 
+    /// <summary>Helper mode used to stop librespot gracefully, see <see cref="LibrespotService"/>.</summary>
+    public const string SendCtrlCArgument = "--send-ctrl-c";
+
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
+        if (args is [SendCtrlCArgument, string pid] && int.TryParse(pid, out int processId))
+        {
+            return NativeMethods.SendCtrlC(processId) ? 0 : 1;
+        }
+
         using var mutex = new Mutex(initiallyOwned: true, SingleInstanceMutexName, out bool firstInstance);
         if (!firstInstance)
         {
@@ -29,7 +37,6 @@ internal static class Program
 
         // The tray app only waits for clicks: never let it compete with a game for the CPU or RAM.
         NativeMethods.EnableEfficiencyModeForCurrentProcess();
-        NativeMethods.InstallCtrlCHandler();
 
         ApplicationConfiguration.Initialize();
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
