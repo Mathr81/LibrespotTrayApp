@@ -13,6 +13,8 @@
 
 #define AppName "LibrespotTrayApp"
 #define AppExe "LibrespotTrayApp.exe"
+; Must match AppPaths.AppUserModelId: Windows shows the shortcut name and icon for the app.
+#define AppUserModelID "Mathr81.LibrespotTrayApp"
 
 [Setup]
 ; Same AppId as the 1.x installer (which used the AppName), so that it is upgraded in place.
@@ -53,18 +55,18 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "startup"; Description: "Lancer au démarrage de Windows"; GroupDescription: "Options :"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
-[InstallDelete]
-; Leftovers of the 1.x self-contained build that a 2.x install does not overwrite.
-Type: files; Name: "{app}\app.ico"
-
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LibrespotTrayApp\Resources\app.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\Librespot Tray App"; Filename: "{app}\{#AppExe}"
-Name: "{autodesktop}\Librespot Tray App"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+Name: "{autoprograms}\Librespot Tray App"; Filename: "{app}\{#AppExe}"; AppUserModelID: "{#AppUserModelID}"
+Name: "{autodesktop}\Librespot Tray App"; Filename: "{app}\{#AppExe}"; AppUserModelID: "{#AppUserModelID}"; Tasks: desktopicon
 
 [Registry]
+; Name and icon for the AppUserModelID (media controls, notifications), even without the shortcut.
+Root: HKA; Subkey: "Software\Classes\AppUserModelId\{#AppUserModelID}"; ValueType: string; ValueName: "DisplayName"; ValueData: "Librespot"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\AppUserModelId\{#AppUserModelID}"; ValueType: string; ValueName: "IconUri"; ValueData: "{app}\app.ico"
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppName}"; ValueData: """{app}\{#AppExe}"""; Tasks: startup
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#AppName}"; Flags: deletevalue uninsdeletevalue; Check: not WizardIsTaskSelected('startup')
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#AppName}"; Flags: dontcreatekey uninsdeletevalue

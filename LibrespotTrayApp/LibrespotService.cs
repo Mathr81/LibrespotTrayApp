@@ -241,6 +241,8 @@ internal sealed class LibrespotService : IDisposable
         if (settings.EnableMediaControls)
         {
             args.Add("--media-controls");
+            args.Add("--media-controls-app-id");
+            args.Add(AppPaths.AppUserModelId);
         }
 
         if (!settings.EnableDiscovery)

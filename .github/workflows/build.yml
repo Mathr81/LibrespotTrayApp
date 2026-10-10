@@ -116,7 +116,7 @@ jobs:
         shell: pwsh
         run: |
           $psi = [System.Diagnostics.ProcessStartInfo]::new('publish_output\librespot.exe')
-          foreach ($a in @('--name', 'CI', '--disable-discovery', '--access-token', 'invalid', '--media-controls')) { $psi.ArgumentList.Add($a) }
+          foreach ($a in @('--name', 'CI', '--disable-discovery', '--access-token', 'invalid', '--media-controls', '--media-controls-app-id', 'Mathr81.LibrespotTrayApp')) { $psi.ArgumentList.Add($a) }
           $psi.UseShellExecute = $false
           $psi.CreateNoWindow = $true
           $psi.RedirectStandardError = $true

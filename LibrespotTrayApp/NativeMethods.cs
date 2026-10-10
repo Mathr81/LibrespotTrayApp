@@ -68,6 +68,9 @@ internal static unsafe partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetProcessInformation(nint hProcess, int processInformationClass, void* processInformation, uint processInformationSize);
 
+    [LibraryImport("shell32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial int SetCurrentProcessExplicitAppUserModelID(string appId);
+
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetProcessWorkingSetSize(nint hProcess, nint dwMinimumWorkingSetSize, nint dwMaximumWorkingSetSize);
@@ -135,6 +138,9 @@ internal static unsafe partial class NativeMethods
         uint memoryPriority = MEMORY_PRIORITY_NORMAL;
         SetProcessInformation(processHandle, ProcessMemoryPriority, &memoryPriority, sizeof(uint));
     }
+
+    /// <summary>Gives the process the identity of its Start menu shortcut (name and icon).</summary>
+    public static void SetAppUserModelId(string appId) => SetCurrentProcessExplicitAppUserModelID(appId);
 
     /// <summary>Releases the pages of the current process that are not in use right now.</summary>
     public static void TrimWorkingSet() => SetProcessWorkingSetSize(CurrentProcess, -1, -1);

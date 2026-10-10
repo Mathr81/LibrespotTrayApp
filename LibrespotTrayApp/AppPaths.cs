@@ -4,6 +4,12 @@ internal static class AppPaths
 {
     public const string AppName = "LibrespotTrayApp";
 
+    /// <summary>
+    /// AppUserModelID, also set on the Start menu shortcut by the installer: Windows uses it to show
+    /// the app name and icon (e.g. in its media controls) instead of "unknown application".
+    /// </summary>
+    public const string AppUserModelId = "Mathr81.LibrespotTrayApp";
+
     /// <summary>%LocalAppData%\LibrespotTrayApp: settings, logs and caches (never roamed).</summary>
     public static readonly string DataDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppName);

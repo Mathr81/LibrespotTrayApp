@@ -37,6 +37,7 @@ internal static class Program
 
         // The tray app only waits for clicks: never let it compete with a game for the CPU or RAM.
         NativeMethods.EnableEfficiencyModeForCurrentProcess();
+        NativeMethods.SetAppUserModelId(AppPaths.AppUserModelId);
 
         ApplicationConfiguration.Initialize();
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);

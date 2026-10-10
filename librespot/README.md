@@ -49,7 +49,8 @@ Nouveau module `src/media_controls.rs` : librespot s'enregistre auprès des
 la pochette et la progression (affichage du volume, panneau multimédia). Les contrôles sont liés à
 une fenêtre cachée sur un thread qui dort dans sa boucle de messages : aucun CPU utilisé hors
 événements. Quand la lecture s'arrête ou passe sur un autre appareil, les touches sont rendues aux
-autres applications.
+autres applications. Avec `--media-controls-app-id`, librespot prend l'AppUserModelID du raccourci
+du menu Démarrer : Windows affiche alors son nom et son icône au lieu de « application inconnue ».
 
 ### `cpal.patch` — cpal 0.16.0 (WASAPI)
 

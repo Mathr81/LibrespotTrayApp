@@ -93,10 +93,10 @@ index c135de1..e1d1cf7 100644
  name = "mach2"
  version = "0.4.3"
 diff --git a/Cargo.toml b/Cargo.toml
-index c892625..5681888 100644
+index c892625..5beb711 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -182,6 +182,18 @@ tokio = { version = "1", features = [
+@@ -182,6 +182,19 @@ tokio = { version = "1", features = [
  ] }
  url = "2.2"
  
@@ -109,13 +109,14 @@ index c892625..5681888 100644
 +    "Win32_Graphics_Gdi",
 +    "Win32_System_LibraryLoader",
 +    "Win32_System_WinRT",
++    "Win32_UI_Shell",
 +    "Win32_UI_WindowsAndMessaging",
 +] }
 +
  [package.metadata.deb]
  maintainer = "Librespot Organization <noreply@github.com>"
  copyright = "2015, Paul Liétar"
-@@ -209,3 +221,6 @@ assets = [
+@@ -209,3 +222,6 @@ assets = [
      ["contrib/librespot.service", "lib/systemd/system/", "644"],
      ["contrib/librespot.user.service", "lib/systemd/user/", "644"],
  ]
@@ -394,7 +395,7 @@ index b6cd346..8748ce2 100644
              thread::sleep(Duration::from_millis(10));
          }
 diff --git a/src/main.rs b/src/main.rs
-index fb85803..883ead3 100644
+index fb85803..dbc2170 100644
 --- a/src/main.rs
 +++ b/src/main.rs
 @@ -38,6 +38,7 @@ use thiserror::Error;
@@ -405,23 +406,25 @@ index fb85803..883ead3 100644
  mod player_event_handler;
  use player_event_handler::{EventHandler, run_program_on_sink_events};
  
-@@ -221,6 +222,7 @@ struct Setup {
+@@ -221,6 +222,8 @@ struct Setup {
      emit_sink_events: bool,
      zeroconf_ip: Vec<std::net::IpAddr>,
      zeroconf_backend: Option<DnsSdServiceBuilder>,
 +    media_controls: bool,
++    media_controls_app_id: Option<String>,
  }
  
  async fn get_setup() -> Setup {
-@@ -284,6 +286,7 @@ async fn get_setup() -> Setup {
+@@ -284,6 +287,8 @@ async fn get_setup() -> Setup {
      const ZEROCONF_INTERFACE: &str = "zeroconf-interface";
      const ZEROCONF_BACKEND: &str = "zeroconf-backend";
      const LOCAL_FILE_DIR: &str = "local-file-dir";
 +    const MEDIA_CONTROLS: &str = "media-controls";
++    const MEDIA_CONTROLS_APP_ID: &str = "media-controls-app-id";
  
      // Mostly arbitrary.
      const AP_PORT_SHORT: &str = "a";
-@@ -437,6 +440,11 @@ async fn get_setup() -> Setup {
+@@ -437,6 +442,17 @@ async fn get_setup() -> Setup {
          ENABLE_OAUTH,
          "Perform interactive OAuth sign in.",
      )
@@ -430,26 +433,34 @@ index fb85803..883ead3 100644
 +        MEDIA_CONTROLS,
 +        "Handle the media keys and show what is playing in the Windows media controls (Windows only).",
 +    )
++    .optopt(
++        "",
++        MEDIA_CONTROLS_APP_ID,
++        "AppUserModelID of the Start menu shortcut whose name and icon the Windows media controls show.",
++        "ID",
++    )
      .optopt(
          NAME_SHORT,
          NAME,
-@@ -1838,6 +1846,7 @@ async fn get_setup() -> Setup {
+@@ -1838,6 +1854,8 @@ async fn get_setup() -> Setup {
  
      let player_event_program = opt_str(ONEVENT);
      let emit_sink_events = opt_present(EMIT_SINK_EVENTS);
 +    let media_controls = opt_present(MEDIA_CONTROLS);
++    let media_controls_app_id = opt_str(MEDIA_CONTROLS_APP_ID);
  
      Setup {
          format,
-@@ -1857,6 +1866,7 @@ async fn get_setup() -> Setup {
+@@ -1857,6 +1875,8 @@ async fn get_setup() -> Setup {
          emit_sink_events,
          zeroconf_ip,
          zeroconf_backend,
 +        media_controls,
++        media_controls_app_id,
      }
  }
  
-@@ -2005,8 +2015,36 @@ async fn main() {
+@@ -2005,8 +2025,39 @@ async fn main() {
          }
      }
  
@@ -458,7 +469,10 @@ index fb85803..883ead3 100644
 +        tokio::sync::mpsc::unbounded_channel::<media_controls::MediaCommand>();
 +    #[cfg(windows)]
 +    if setup.media_controls {
-+        match media_controls::MediaControls::start(media_command_sender.clone()) {
++        match media_controls::MediaControls::start(
++            media_command_sender.clone(),
++            setup.media_controls_app_id.as_deref(),
++        ) {
 +            Ok(controls) => {
 +                let mut events = player.get_player_event_channel();
 +                tokio::spawn(async move {
@@ -486,7 +500,7 @@ index fb85803..883ead3 100644
              credentials = async {
                  match discovery.as_mut() {
                      Some(d) => d.next().await,
-@@ -2099,6 +2137,7 @@ async fn main() {
+@@ -2099,6 +2150,7 @@ async fn main() {
          }
      }
  
@@ -496,10 +510,10 @@ index fb85803..883ead3 100644
      let mut shutdown_tasks = tokio::task::JoinSet::new();
 diff --git a/src/media_controls.rs b/src/media_controls.rs
 new file mode 100644
-index 0000000..dcb92fb
+index 0000000..060a430
 --- /dev/null
 +++ b/src/media_controls.rs
-@@ -0,0 +1,301 @@
+@@ -0,0 +1,312 @@
 +//! Windows media controls (System Media Transport Controls): headset and keyboard media keys,
 +//! and the title, artist and cover shown by Windows (volume overlay, media flyout...).
 +
@@ -558,6 +572,7 @@ index 0000000..dcb92fb
 +    use windows::Win32::System::WinRT::{
 +        ISystemMediaTransportControlsInterop, RO_INIT_MULTITHREADED, RoInitialize,
 +    };
++    use windows::Win32::UI::Shell::SetCurrentProcessExplicitAppUserModelID;
 +    use windows::Win32::UI::WindowsAndMessaging::{
 +        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, MSG, RegisterClassW,
 +        TranslateMessage, WINDOW_EX_STYLE, WNDCLASSW, WS_OVERLAPPED,
@@ -580,7 +595,17 @@ index 0000000..dcb92fb
 +    impl MediaControls {
 +        /// Registers librespot with Windows. The controls need a window: a hidden one is created
 +        /// on a dedicated thread, which then sleeps in its message loop.
-+        pub fn start(commands: UnboundedSender<MediaCommand>) -> Result<Self> {
++        ///
++        /// Windows shows the name and icon of the Start menu shortcut that has `app_id` as its
++        /// AppUserModelID; without one, the media controls show an unknown application.
++        pub fn start(
++            commands: UnboundedSender<MediaCommand>,
++            app_id: Option<&str>,
++        ) -> Result<Self> {
++            if let Some(app_id) = app_id {
++                unsafe { SetCurrentProcessExplicitAppUserModelID(&HSTRING::from(app_id))? };
++            }
++
 +            let (sender, receiver) = mpsc::channel();
 +            thread::Builder::new()
 +                .name("media-controls".into())
