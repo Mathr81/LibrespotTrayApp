@@ -83,8 +83,9 @@ Spotify et dernier volume) et `cache\` (cache audio, limité à 2 Go par défaut
 dotnet build LibrespotTrayApp -c Release  # ou ouvrez LibrespotTrayApp.sln
 ```
 
-La CI (`.github/workflows/build.yml`) compile tout et produit l'installateur à chaque push ; un tag
-`vX.Y.Z` publie une release.
+La CI (`.github/workflows/build.yml`) compile tout et produit l'installateur à chaque push. Pour
+publier une release : onglet **Actions** → **Build** → **Run workflow** sur `main` en indiquant la
+version (par ex. `2.0.1`), ou poussez un tag `vX.Y.Z`.
 
 ## 🤝 Contribuer
 
