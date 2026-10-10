@@ -109,7 +109,7 @@ index e5656ad..7fd78f2 100644
      "playback",
  ] }
 diff --git a/playback/src/audio_backend/rodio.rs b/playback/src/audio_backend/rodio.rs
-index b6cd346..3d4528d 100644
+index b6cd346..8748ce2 100644
 --- a/playback/src/audio_backend/rodio.rs
 +++ b/playback/src/audio_backend/rodio.rs
 @@ -1,4 +1,6 @@
@@ -136,13 +136,16 @@ index b6cd346..3d4528d 100644
  }
  
  fn list_formats(device: &cpal::Device) {
-@@ -142,11 +149,32 @@ fn list_outputs(host: &cpal::Host) -> Result<(), cpal::DevicesError> {
+@@ -142,11 +149,35 @@ fn list_outputs(host: &cpal::Host) -> Result<(), cpal::DevicesError> {
      Ok(())
  }
  
 +/// Requested WASAPI buffer size: 4096 frames, about 93 ms at 44.1 kHz.
 +#[cfg(target_os = "windows")]
 +const WASAPI_BUFFER_FRAMES: cpal::FrameCount = 4096;
++
++/// Time for the device buffer to play out before closing the output.
++const OUTPUT_DRAIN_TIME: Duration = Duration::from_millis(120);
 +
 +/// How many times, and how often, to try reopening the output after the stream failed. Windows may
 +/// need a moment to switch the default device after the current one disappeared.
@@ -169,7 +172,7 @@ index b6cd346..3d4528d 100644
      let cpal_device = match device.as_deref() {
          Some("?") => match list_outputs(host) {
              Ok(()) => exit(0),
-@@ -157,9 +185,19 @@ fn create_sink(
+@@ -157,9 +188,19 @@ fn create_sink(
          },
          Some(device_name) => {
              // Ignore devices for which getting name fails, or format doesn't match
@@ -191,7 +194,7 @@ index b6cd346..3d4528d 100644
          }
          None => host
              .default_output_device()
-@@ -193,19 +231,53 @@ fn create_sink(
+@@ -193,19 +234,53 @@ fn create_sink(
          AudioFormat::S16 => cpal::SampleFormat::I16,
      };
  
@@ -253,7 +256,7 @@ index b6cd346..3d4528d 100644
      // disable logging on stream drop
      stream.log_on_drop(false);
  
-@@ -219,24 +291,81 @@ pub fn open(host: cpal::Host, device: Option<String>, format: AudioFormat) -> Ro
+@@ -219,24 +294,85 @@ pub fn open(host: cpal::Host, device: Option<String>, format: AudioFormat) -> Ro
          host.id().name()
      );
  
@@ -334,6 +337,10 @@ index b6cd346..3d4528d 100644
 +            while !sink.empty() && !self.stream_failed() {
 +                thread::sleep(Duration::from_millis(10));
 +            }
++            // ...including what is still in the device buffer.
++            if !self.stream_failed() {
++                thread::sleep(OUTPUT_DRAIN_TIME);
++            }
 +            drop(sink);
 +            drop(stream);
 +            debug!("Audio output closed");
@@ -341,7 +348,7 @@ index b6cd346..3d4528d 100644
          Ok(())
      }
  
-@@ -250,12 +379,15 @@ impl Sink for RodioSink {
+@@ -250,12 +386,15 @@ impl Sink for RodioSink {
              SAMPLE_RATE,
              samples_f32,
          );
